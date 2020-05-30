@@ -15,7 +15,7 @@ pool:
   vmImage: "ubuntu-latest"
 
 steps:
-  - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+  - task: terraformInstaller@0
     displayName: "Install Terraform $(tf_version)"
     inputs:
       terraformVersion: "$(tf_version)"
