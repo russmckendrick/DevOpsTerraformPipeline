@@ -16,9 +16,9 @@ pool:
 
 steps:
   - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
-    displayName: "Install Terraform $tf_version"
+    displayName: "Install Terraform $(tf_version)"
     inputs:
-      terraformVersion: "$tf_version"
+      terraformVersion: "$(tf_version)"
 
   - task: AzureCLI@2
     displayName: "Azure CLI - Get Creds"
