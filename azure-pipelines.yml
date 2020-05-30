@@ -51,9 +51,11 @@ steps:
     inputs:
       command: "plan"
       backendServiceArm: "$(SUBSCRIPTION_NAME)"
+      environmentServiceNameAzureRM: "$(tf_environment)"
 
   - task: TerraformTaskV1@0
     displayName: "Run > terraform apply"
     inputs:
       command: "apply"
       backendServiceArm: "$(SUBSCRIPTION_NAME)"
+      environmentServiceNameAzureRM: "$(tf_environment)"
