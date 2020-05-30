@@ -4,13 +4,13 @@ trigger:
   - master
 
 variables:
-  tf_version: "0.12.26"
-  tf_state_rg: "blogpost-tfstate-rg"
-  tz_state_location: "uksouth"
-  tf_state_sa_name: "blogposttfstatesa"
-  tf_state_container_name: "tfstate"
-  tf_state_tags: ("env=blogpost-terraform-devops-pipeline" "deployedBy=devops")
-  tf_environment: "dev"
+  tf_version: "0.12.26" # what version of terraform should be used
+  tf_state_rg: "blogpost-tfstate-rg" # name of the resource group to create/use for the terraform state file
+  tz_state_location: "uksouth" # location of the resource group to create/use for the terraform state file
+  tf_state_sa_name: "blogposttfstatesa" # name of of the storage account to create/use for the terraform state file
+  tf_state_container_name: "tfstate" # name of of the container to create/use for the terraform state file
+  tf_state_tags: ("env=blogpost-terraform-devops-pipeline" "deployedBy=devops") # tags for the resources above which support them
+  tf_environment: "dev" # enviroment name, used for the statefile name
 
 pool:
   vmImage: "ubuntu-latest"
@@ -22,7 +22,7 @@ steps:
       terraformVersion: "$(tf_version)"
 
   - task: AzureCLI@2
-    displayName: "Create / Check the Terraform Statefile Storage Account"
+    displayName: "Create/Check the Terraform Statefile Azure Storage Account"
     inputs:
       azureSubscription: "$(SUBSCRIPTION_NAME)"
       addSpnToEnvironment: true
@@ -37,7 +37,7 @@ steps:
         echo "##vso[task.setvariable variable=tf_state_sa_key]$ACCOUNT_KEY"
 
   - task: TerraformTaskV1@0
-    displayName: "Terraform - init"
+    displayName: "Run > terraform init"
     inputs:
       backendServiceArm: "$(SUBSCRIPTION_NAME)"
       backendAzureRmResourceGroupName: "$(tf_state_rg)"
