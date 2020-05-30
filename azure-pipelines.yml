@@ -42,4 +42,4 @@ steps:
       backendAzureRmResourceGroupName: "$(tf_state_rg)"
       backendAzureRmStorageAccountName: "$(tf_state_sa_name)"
       backendAzureRmContainerName: $(tf_state_container_name)
-      backendAzureRmKey: "$(environment).terraform.tstate"
+      backendAzureRmKey: "$(tf_environment).terraform.tstate"
