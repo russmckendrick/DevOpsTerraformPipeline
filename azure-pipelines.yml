@@ -50,8 +50,10 @@ steps:
     displayName: "Run > terraform plan"
     inputs:
       command: "plan"
+      backendServiceArm: "$(SUBSCRIPTION_NAME)"
 
   - task: TerraformTaskV1@0
     displayName: "Run > terraform apply"
     inputs:
       command: "apply"
+      backendServiceArm: "$(SUBSCRIPTION_NAME)"
