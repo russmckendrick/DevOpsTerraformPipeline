@@ -12,3 +12,11 @@ provider "azurerm" {
   version = "=2.0"
   features {}
 }
+
+# Create the resource group
+######################################################################################################
+resource "azurerm_resource_group" "resource_group" {
+  name     = "test-terraform-pipeline-rg"
+  location = "uksouth"
+  tags     = merge(var.default_tags, map("type", "resource"))
+}
