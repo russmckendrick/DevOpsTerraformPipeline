@@ -65,7 +65,7 @@ steps:
       command: "plan"
       environmentServiceNameAzureRM: "$(SUBSCRIPTION_NAME)"
 
-  - task: TerraformCLI@0
+  - task: TerraformTaskV1@0
     displayName: "Run > terraform apply"
     inputs:
       command: "apply"
