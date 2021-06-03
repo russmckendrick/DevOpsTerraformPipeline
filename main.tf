@@ -5,11 +5,15 @@
 terraform {
   required_version = ">= 0.12.0"
   backend "azurerm" {}
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "=2.46.0"
+    }
 }
 
-# https://registry.terraform.io/providers/hashicorp/azurerm/
+# https://registry.terraform.io/providers/hashicorp/azurerm/latest
 provider "azurerm" {
-  version = "=2.0"
   features {}
 }
 
