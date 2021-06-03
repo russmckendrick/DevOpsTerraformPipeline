@@ -16,7 +16,7 @@ pool:
   vmImage: "ubuntu-latest"
 
 steps:
-  - task: TerraformInstaller@0
+  - task: TerraformInstaller
     displayName: "Install Terraform $(tf_version)"
     inputs:
       terraformVersion: "$(tf_version)"
@@ -65,7 +65,7 @@ steps:
       command: "plan"
       environmentServiceNameAzureRM: "$(SUBSCRIPTION_NAME)"
 
-  - task: TerraformTaskV1@0
+  - task: TerraformCLI@0
     displayName: "Run > terraform apply"
     inputs:
       command: "apply"
