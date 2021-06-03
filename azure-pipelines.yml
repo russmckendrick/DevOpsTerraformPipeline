@@ -29,9 +29,9 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
-        curl -L "$(curl -s https://api.github.com/repos/accurics/terrascan/releases/latest | grep -o -E "https://.+?_Linux_x86_64.tar.gz")" > terrascan.tar.gz
+        curl -L "$(curl -s https://api.github.com/repos/accurics/terrascan/releases/latest | grep -o -E "https://.+?_Linux_x86_64.gz")" > terrascan.tar.gz
         tar -xf terrascan.tar.gz terrascan && rm terrascan.tar.gz
-        sudo install terrascan /usr/local/bin && rm terrascan
+        install terrascan /usr/local/bin && rm terrascan
         terrascan
 
   - task: AzureCLI@2
@@ -58,24 +58,6 @@ steps:
       backendAzureRmStorageAccountName: "$(tf_state_sa_name)"
       backendAzureRmContainerName: $(tf_state_container_name)
       backendAzureRmKey: "$(tf_environment).terraform.tstate"
-
-  - task: AzureCLI@2
-    displayName: "Run Terrascan"
-    inputs:
-      azureSubscription: "$(SUBSCRIPTION_NAME)"
-      addSpnToEnvironment: true
-      scriptType: "bash"
-      scriptLocation: "inlineScript"
-      inlineScript: |
-        terrascan scan
-        terrascan scan --directory ./ --output junit-xml > $(Sytem.DefaultWorkingDirectory)/Terrascan-Report.xml
-
-  - task: PublishTestResults@2
-    displayName: "Publish Terrascan results"
-    inputs:
-      testResultsFormat: "JUnit"
-      testResultsFiles: "Terrascan-Report.xml"
-      searchFolder: "$(System.DefaultWorkingDirectory)"
 
   - task: TerraformCLI@0
     displayName: "Run > terraform plan"
