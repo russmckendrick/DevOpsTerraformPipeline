@@ -54,16 +54,36 @@ steps:
     inputs:
       command: "init"
       backendServiceArm: "$(SUBSCRIPTION_NAME)"
+      backendType: "azurerm"
       backendAzureRmResourceGroupName: "$(tf_state_rg)"
       backendAzureRmStorageAccountName: "$(tf_state_sa_name)"
       backendAzureRmContainerName: $(tf_state_container_name)
       backendAzureRmKey: "$(tf_environment).terraform.tstate"
+
+  - task: AzureCLI@2
+    displayName: "Run Terrascan"
+    inputs:
+      azureSubscription: "$(SUBSCRIPTION_NAME)"
+      addSpnToEnvironment: true
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        terrascan scan
+        terrascan scan --directory ./ --output junit-xml > $(Sytem.DefaultWorkingDirectory)/Terrascan-Report.xml
+
+  - task: PublishTestResults@2
+    displayName: "Publish Terrascan results"
+    inputs:
+      testResultsFormat: "JUnit"
+      testResultsFiles: "Terrascan-Report.xml"
+      searchFolder: "$(System.DefaultWorkingDirectory)"
 
   - task: TerraformCLI@0
     displayName: "Run > terraform plan"
     inputs:
       command: "plan"
       environmentServiceNameAzureRM: "$(SUBSCRIPTION_NAME)"
+      publishPlanResults: "PlanResults"
 
   - task: TerraformCLI@0
     displayName: "Run > terraform apply"

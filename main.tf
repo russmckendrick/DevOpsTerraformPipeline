@@ -4,7 +4,6 @@
 # What is the minimum version of Terraform we need?
 terraform {
   required_version = ">= 0.15.0"
-  backend "azurerm" {}
   required_providers {
     azurerm = {
       # https://registry.terraform.io/providers/hashicorp/azurerm/latest
