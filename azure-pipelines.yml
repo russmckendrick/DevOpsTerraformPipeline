@@ -25,7 +25,6 @@ steps:
     inputs:
       terraformVersion: "$(tf_version)"
 
-      sudo install terrascan /usr/local/bin
   - task: AzureCLI@2
     displayName: "Create/Check the Terraform Statefile Azure Storage Account"
     inputs:
