@@ -52,7 +52,7 @@ steps:
       backendAzureRmKey: "$(tf_environment).terraform.tstate"
 
   - script: |
-      sh -c "docker run --rm -t -v $(pwd):/iac -w /iac accurics/terrascan scan -o junit-xml" > Terrascan-Report.xml
+      sh -c "docker run --rm -it -v $(pwd):/iac -w /iac accurics/terrascan scan -o junit-xml" > Terrascan-Report.xml
     workingDirectory: $(System.DefaultWorkingDirectory)
     displayName: "Run > Terrascan"
 
