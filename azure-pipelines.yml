@@ -54,9 +54,9 @@ steps:
       backendAzureRmKey: "$(tf_environment).terraform.tstate"
 
   - script: |
-      terrascan scan --directory ./ --output junit-xml > Terrascan-Report.xml
+      terrascan scan
     workingDirectory: $(System.DefaultWorkingDirectory)
-    displayName: "Run > terrascanscan "
+    displayName: "Run > terrascan scan "
 
   - task: PublishTestResults@2
     displayName: "Publish Terrascan results"
