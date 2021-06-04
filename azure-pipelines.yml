@@ -68,8 +68,9 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
-        sudo terrascan init
-        sudo terrascan scan --directory ./ --output junit-xml > $(Sytem.DefaultWorkingDirectory)/Terrascan-Report.xml
+        mkdir ~/.terrascan
+        terrascan init
+        terrascan scan --directory ./ --output junit-xml > ~/Terrascan-Report.xml
 
   - task: PublishTestResults@2
     displayName: "Publish Terrascan results"
