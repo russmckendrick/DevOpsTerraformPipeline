@@ -54,16 +54,20 @@ steps:
       backendAzureRmKey: "$(tf_environment).terraform.tstate"
 
   - script: |
-      terrascan scan
-    workingDirectory: $(System.DefaultWorkingDirectory)
-    displayName: "Run > terrascan scan "
+      mkdir super-linter.report
+      docker pull github/super-linter:latest
+      docker run -e RUN_LOCAL=true -e OUTPUT_DETAILS=detailed -e OUTPUT_FORMAT=tap -v $(System.DefaultWorkingDirectory):/tmp/lint --name outputDir github/super-linter:latest
+      docker cp outputDir:/tmp/lint/super-linter.report $(System.DefaultWorkingDirectory)/GHLinterReport
+      tap-junit --pretty --suite TFLint --input super-linter-TERRAFORM.tap --output $(System.DefaultWorkingDirectory)/Converted --name TFLint-Report.xml
+      tap-junit --pretty --suite TerraScan --input super-linter-TERRAFORM_TERRASCAN.tap --output $(System.DefaultWorkingDirectory)/Converted --name TerraScan-Report.xml
+    displayName: "Run > Superlinter"
 
   - task: PublishTestResults@2
     displayName: "Publish Terrascan results"
     inputs:
       testResultsFormat: "JUnit"
       testResultsFiles: "Terrascan-Report.xml"
-      searchFolder: "$(System.DefaultWorkingDirectory)"
+      searchFolder: "$(System.DefaultWorkingDirectory)/Converted"
 
   - task: TerraformCLI@0
     displayName: "Run > terraform plan"
