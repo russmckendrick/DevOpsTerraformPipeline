@@ -17,9 +17,15 @@ pool:
 
 steps:
   - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
-    displayName: "Install Terraform $(tf_version)"
+    displayName: "Install > terraform"
     inputs:
       terraformVersion: "$(tf_version)"
+
+  - script: |
+      curl -L "$(curl -s https://api.github.com/repos/accurics/terrascan/releases/latest | grep -o -E "https://.+?_Linux_x86_64.tar.gz")" > terrascan.tar.gz
+      tar -xvf terrascan.tar.gz
+      sudo install terrascan /usr/local/bin
+    displayName: "Install > terrascan"
 
   - task: AzureCLI@2
     displayName: "Create/Check the Terraform Statefile Azure Storage Account"
@@ -47,18 +53,13 @@ steps:
       backendAzureRmContainerName: $(tf_state_container_name)
       backendAzureRmKey: "$(tf_environment).terraform.tstate"
 
-  - task: AzureCLI@2
-    displayName: "Run > terrascan scan"
-    inputs:
-      azureSubscription: "$(SUBSCRIPTION_NAME)"
-      addSpnToEnvironment: true
-      scriptType: "bash"
-      scriptLocation: "inlineScript"
-      inlineScript: |
-        docker run --rm -it  --volume ./:/DATA accurics/terrascan:latest scan -d /DATA/ --output junit-xml > Terrascan-Report.xml
+  - script: |
+      terrascan scan --directory ./ --output junit-xml > Terrascan-Report.xml
+    workingDirectory: $(System.DefaultWorkingDirectory)
+    displayName: "Run > terrascanscan "
 
   - task: PublishTestResults@2
-    displayName: "Publish > Uploading Terrascan results"
+    displayName: "Publish Terrascan results"
     inputs:
       testResultsFormat: "JUnit"
       testResultsFiles: "Terrascan-Report.xml"
