@@ -55,7 +55,7 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
-        docker run --rm -it  --volume $(pwd)/:/DATA accurics/terrascan:latest scan -d /DATA/ --output junit-xml > $(pwd)/Terrascan-Report.xml
+        docker run --rm -it  --volume ./:/DATA accurics/terrascan:latest scan -d /DATA/ --output junit-xml > Terrascan-Report.xml
 
   - task: PublishTestResults@2
     displayName: "Publish > Uploading Terrascan results"
