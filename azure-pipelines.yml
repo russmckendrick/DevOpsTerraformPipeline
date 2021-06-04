@@ -16,6 +16,10 @@ pool:
   vmImage: "ubuntu-latest"
 
 steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: "12.x"
+
   - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
     displayName: "Install > terraform"
     inputs:
@@ -58,6 +62,7 @@ steps:
       docker pull github/super-linter:latest
       docker run -e RUN_LOCAL=true -e OUTPUT_DETAILS=detailed -e OUTPUT_FORMAT=tap -v $(System.DefaultWorkingDirectory):/tmp/lint --name outputDir github/super-linter:latest
       docker cp outputDir:/tmp/lint/super-linter.report $(System.DefaultWorkingDirectory)/GHLinterReport
+      npm install -g tap-junit
       tap-junit --pretty --suite TFLint --input super-linter-TERRAFORM.tap --output $(System.DefaultWorkingDirectory)/Converted --name TFLint-Report.xml
       tap-junit --pretty --suite TerraScan --input super-linter-TERRAFORM_TERRASCAN.tap --output $(System.DefaultWorkingDirectory)/Converted --name TerraScan-Report.xml
     displayName: "Run > Superlinter"
