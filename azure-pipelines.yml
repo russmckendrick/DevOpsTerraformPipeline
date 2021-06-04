@@ -25,12 +25,7 @@ steps:
     inputs:
       terraformVersion: "$(tf_version)"
 
-  - script: |
-      curl -L "$(curl -s https://api.github.com/repos/accurics/terrascan/releases/latest | grep -o -E "https://.+?_Linux_x86_64.tar.gz")" > terrascan.tar.gz
-      tar -xvf terrascan.tar.gz
       sudo install terrascan /usr/local/bin
-    displayName: "Install > terrascan"
-
   - task: AzureCLI@2
     displayName: "Create/Check the Terraform Statefile Azure Storage Account"
     inputs:
@@ -58,22 +53,15 @@ steps:
       backendAzureRmKey: "$(tf_environment).terraform.tstate"
 
   - script: |
-      mkdir super-linter.report
-      docker pull github/super-linter:latest
-      docker run -e RUN_LOCAL=true -e OUTPUT_DETAILS=detailed -e OUTPUT_FORMAT=tap -v $(System.DefaultWorkingDirectory):/tmp/lint --name outputDir github/super-linter:latest
-      docker cp outputDir:/tmp/lint/super-linter.report $(System.DefaultWorkingDirectory)/GHLinterReport
-      ls -lhat $(System.DefaultWorkingDirectory)/GHLinterReport
-      npm install -g tap-junit
-      tap-junit --pretty --suite TFLint --input $(System.DefaultWorkingDirectory)/GHLinterReport/super-linter-TERRAFORM.tap --output $(System.DefaultWorkingDirectory)/Converted --name TFLint-Report.xml
-      tap-junit --pretty --suite TerraScan --input $(System.DefaultWorkingDirectory)/GHLinterReport/super-linter-TERRAFORM_TERRASCAN.tap --output $(System.DefaultWorkingDirectory)/Converted --name TerraScan-Report.xml
-    displayName: "Run > Superlinter"
+      docker run --rm -it -v "$(System.DefaultWorkingDirectory):/iac" -w /iac accurics/terrascan scan -o junit-xml > $(System.DefaultWorkingDirectory)/Terrascan-Report.xml
+    displayName: "Run > Terrascan"
 
   - task: PublishTestResults@2
     displayName: "Publish Terrascan results"
     inputs:
       testResultsFormat: "JUnit"
       testResultsFiles: "Terrascan-Report.xml"
-      searchFolder: "$(System.DefaultWorkingDirectory)/Converted"
+      searchFolder: "$(System.DefaultWorkingDirectory)"
 
   - task: TerraformCLI@0
     displayName: "Run > terraform plan"
