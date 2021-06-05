@@ -47,8 +47,10 @@ stages:
   # Check the Statefile Azure Storage Account exists
   ######################################################################
 
-  - stage: "checkStatefile"
+  - stage: "CheckStatefile"
     displayName: "Configure Terraform Statefile Storage Account"
+    dependsOn:
+      - "runTerrascan"
     jobs:
       - job: "runTerrascan"
         displayName: "Create/Check the Terraform Statefile Azure Storage Account"
@@ -73,15 +75,23 @@ stages:
 
   - stage: "runTerraform"
     displayName: "Download and run Terraform"
+    dependsOn:
+      - "runTerrascan"
+      - "CheckStatefile"
     jobs:
-      - job: "runTerrascan"
-        displayName: "Download and run Terraform"
+      - job: "TerraformInstall"
+        displayName: "Terraform > Install"
         steps:
           - task: TerraformInstaller@0
             displayName: "Install > terraform"
             inputs:
               terraformVersion: "$(tf_version)"
 
+      - job: "TerraformInit"
+        displayName: "Terraform > Init"
+        dependsOn:
+          - "TerraformInstall"
+        steps:
           - task: TerraformCLI@0
             displayName: "Run > terraform init"
             inputs:
@@ -93,15 +103,31 @@ stages:
               backendAzureRmContainerName: $(tf_state_container_name)
               backendAzureRmKey: "$(tf_environment).terraform.tstate"
 
+      - job: "TerraformPlan"
+        displayName: "Terraform > Plan"
+        dependsOn:
+          - "TerraformInstall"
+          - "TerraformInit"
+        steps:
           - task: TerraformCLI@0
             displayName: "Run > terraform plan"
             inputs:
               command: "plan"
               environmentServiceName: "$(SUBSCRIPTION_NAME)"
               publishPlanResults: "PlanResults"
+              commandOptions: "-out=$(System.DefaultWorkingDirectory)/terraform.tfplan -detailed-exitcode"
 
+      - job: "TerraformApply"
+        displayName: "Terraform > Apply"
+        dependsOn:
+          - "TerraformInstall"
+          - "TerraformInit"
+          - "TerraformPlan"
+        steps:
           - task: TerraformCLI@0
             displayName: "Run > terraform apply"
+            condition: and(succeeded(), eq(variables['TERRAFORM_PLAN_HAS_CHANGES'], 'true'))
             inputs:
               command: "apply"
               environmentServiceName: "$(SUBSCRIPTION_NAME)"
+              commandOptions: "$(System.DefaultWorkingDirectory)/terraform.tfplan"
