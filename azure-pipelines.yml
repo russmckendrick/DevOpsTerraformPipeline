@@ -20,7 +20,7 @@ stages:
   ######################################################################
 
   - stage: "runTerrascan"
-    displayName: "Run Terrascan"
+    displayName: "Terraform - Run Terrascan"
     jobs:
       - job: "runTerrascan"
         displayName: "Download, run and publish results of Terrascan scan"
@@ -48,7 +48,7 @@ stages:
   ######################################################################
 
   - stage: "CheckStatefile"
-    displayName: "Configure Terraform Statefile Storage Account"
+    displayName: "Terraform - Configure Terraform Statefile Storage Account"
     dependsOn:
       - "runTerrascan"
     jobs:
@@ -74,24 +74,19 @@ stages:
   ######################################################################
 
   - stage: "runTerraform"
-    displayName: "Download and run Terraform"
+    displayName: "Terraform - Tasks"
     dependsOn:
       - "runTerrascan"
       - "CheckStatefile"
     jobs:
-      - job: "TerraformInstall"
-        displayName: "Terraform > Install"
+      - job: "TerraformJobs"
+        displayName: "Terraform > install, init, plan & apply"
         steps:
           - task: TerraformInstaller@0
             displayName: "Install > terraform"
             inputs:
               terraformVersion: "$(tf_version)"
 
-      - job: "TerraformInit"
-        displayName: "Terraform > Init"
-        dependsOn:
-          - "TerraformInstall"
-        steps:
           - task: TerraformCLI@0
             displayName: "Run > terraform init"
             inputs:
@@ -103,12 +98,6 @@ stages:
               backendAzureRmContainerName: $(tf_state_container_name)
               backendAzureRmKey: "$(tf_environment).terraform.tstate"
 
-      - job: "TerraformPlan"
-        displayName: "Terraform > Plan"
-        dependsOn:
-          - "TerraformInstall"
-          - "TerraformInit"
-        steps:
           - task: TerraformCLI@0
             displayName: "Run > terraform plan"
             inputs:
@@ -117,13 +106,6 @@ stages:
               publishPlanResults: "PlanResults"
               commandOptions: "-out=$(System.DefaultWorkingDirectory)/terraform.tfplan -detailed-exitcode"
 
-      - job: "TerraformApply"
-        displayName: "Terraform > Apply"
-        dependsOn:
-          - "TerraformInstall"
-          - "TerraformInit"
-          - "TerraformPlan"
-        steps:
           - task: TerraformCLI@0
             displayName: "Run > terraform apply"
             condition: and(succeeded(), eq(variables['TERRAFORM_PLAN_HAS_CHANGES'], 'true'))
