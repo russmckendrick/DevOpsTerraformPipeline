@@ -22,7 +22,7 @@ provider "azurerm" {
 resource "azurerm_resource_group" "resource_group" {
   name     = "test-terraform-pipeline-rg"
   location = "uksouth"
-  tags     = merge(var.default_tags, map("type", "resource"))
+  tags     = merge(var.default_tags, tomap("type", "resource"))
 }
 
 resource "azurerm_management_lock" "resource-group-lock" {
