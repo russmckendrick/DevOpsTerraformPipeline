@@ -97,11 +97,11 @@ stages:
             displayName: "Run > terraform plan"
             inputs:
               command: "plan"
-              environmentServiceNameAzureRM: "$(SUBSCRIPTION_NAME)"
+              environmentServiceName: "$(SUBSCRIPTION_NAME)"
               publishPlanResults: "PlanResults"
 
           - task: TerraformCLI@0
             displayName: "Run > terraform apply"
             inputs:
               command: "apply"
-              environmentServiceNameAzureRM: "$(SUBSCRIPTION_NAME)"
+              environmentServiceName: "$(SUBSCRIPTION_NAME)"
