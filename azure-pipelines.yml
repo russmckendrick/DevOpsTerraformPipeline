@@ -20,9 +20,9 @@ stages:
   ######################################################################
 
   - stage: "runCheckov"
-    displayName: "Terraform - Run Checkov"
+    displayName: "Checkov - Scan Terraform files"
     jobs:
-      - job: "runTerrascan"
+      - job: "runCheckov"
         displayName: "Download, run and publish results of Checkov scan"
         steps:
           - bash: |
@@ -31,9 +31,9 @@ stages:
             displayName: "Pull > bridgecrew/checkov"
 
           - bash: |
-              echo $(docker run --volume $(pwd):/tf bridgecrew/checkov --directory /tf --output junitxml) > CheckovReport.xml
+              docker run --volume $(pwd):/tf bridgecrew/checkov --directory /tf --output junitxml --soft-fail > $(pwd)/CheckovReport.xml
             workingDirectory: $(System.DefaultWorkingDirectory)
-            displayName: "Run > Terrascan"
+            displayName: "Run > checkov"
 
           - task: PublishTestResults@2
             inputs:
@@ -44,7 +44,7 @@ stages:
               searchFolder: "$(System.DefaultWorkingDirectory)"
             displayName: "Publish > Checkov scan results"
 
-  # Run Terraform - uses https://marketplace.visualstudio.com/items?itemName=charleszipp.azure-pipelines-tasks-terraform
+  # Validate Terraform - uses https://marketplace.visualstudio.com/items?itemName=charleszipp.azure-pipelines-tasks-terraform
   ######################################################################
 
   - stage: "validateTerraform"
@@ -80,6 +80,9 @@ stages:
               command: "validate"
               environmentServiceName: "$(SUBSCRIPTION_NAME)"
             displayName: "Run > terraform validate"
+
+  # Run Terraform - uses https://marketplace.visualstudio.com/items?itemName=charleszipp.azure-pipelines-tasks-terraform
+  ######################################################################
 
   - stage: "runTerraform"
     displayName: "Terraform - Tasks"
