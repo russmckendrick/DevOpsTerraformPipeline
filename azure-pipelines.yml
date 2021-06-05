@@ -53,7 +53,7 @@ steps:
 
   - bash: |
       docker pull accurics/terrascan
-      docker run --rm -v $(pwd):/iac -w /iac accurics/terrascan scan -o junit-xml > Terrascan-Report.xml 2>&1
+      docker run --rm -t -v $(pwd):/iac -w /iac accurics/terrascan scan -o junit-xml
     workingDirectory: $(System.DefaultWorkingDirectory)
     displayName: "Run > Terrascan"
 
