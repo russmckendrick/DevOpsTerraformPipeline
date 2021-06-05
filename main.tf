@@ -16,8 +16,6 @@ provider "azurerm" {
   features {}
 }
 
-
-
 # Create the resource group
 ######################################################################################################
 resource "azurerm_resource_group" "resource_group" {

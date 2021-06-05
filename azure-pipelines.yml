@@ -31,7 +31,7 @@ stages:
             displayName: "Pull > Terrascan"
 
           - bash: |
-              echo $(docker run --rm -t -v $(pwd):/iac -w /iac accurics/terrascan scan -o junit-xml) > Terrascan-Report.xml
+              echo $(docker run --rm -t -v $(pwd):/iac -w /iac accurics/terrascan scan -t azure -o junit-xml) > Terrascan-Report.xml
             workingDirectory: $(System.DefaultWorkingDirectory)
             displayName: "Run > Terrascan"
 
@@ -68,7 +68,7 @@ stages:
                 az storage container create --name $(tf_state_container_name) --account-name $(tf_state_sa_name) --account-key $ACCOUNT_KEY
                 echo "##vso[task.setvariable variable=tf_state_sa_key]$ACCOUNT_KEY"
 
-  # Check the Statefile Azure Storage Account exists
+  # Run Terraform - uses https://marketplace.visualstudio.com/items?itemName=charleszipp.azure-pipelines-tasks-terraform
   ######################################################################
 
   - stage: "runTerraform"
