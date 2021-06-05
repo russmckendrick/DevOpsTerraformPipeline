@@ -50,7 +50,7 @@ stages:
   - stage: "validateTerraform"
     displayName: "Terraform - Validate"
     dependsOn:
-      - "runTerrascan"
+      - "runCheckov"
     jobs:
       - job: "TerraformJobs"
         displayName: "Terraform > install, init and validate"
@@ -84,7 +84,7 @@ stages:
   - stage: "runTerraform"
     displayName: "Terraform - Tasks"
     dependsOn:
-      - "runTerrascan"
+      - "runCheckov"
       - "validateTerraform"
     jobs:
       - job: "TerraformJobs"
