@@ -77,12 +77,12 @@ stages:
       - job: "runTerrascan"
         displayName: "Download and run Terraform"
         steps:
-          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
+          - task: TerraformInstaller@0
             displayName: "Install > terraform"
             inputs:
               terraformVersion: "$(tf_version)"
 
-          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformCLI@0
+          - task: TerraformCLI@0
             displayName: "Run > terraform init"
             inputs:
               command: "init"
@@ -93,14 +93,14 @@ stages:
               backendAzureRmContainerName: $(tf_state_container_name)
               backendAzureRmKey: "$(tf_environment).terraform.tstate"
 
-          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformCLI@0
+          - task: TerraformCLI@0
             displayName: "Run > terraform plan"
             inputs:
               command: "plan"
               environmentServiceNameAzureRM: "$(SUBSCRIPTION_NAME)"
               publishPlanResults: "PlanResults"
 
-          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformCLI@0
+          - task: TerraformCLI@0
             displayName: "Run > terraform apply"
             inputs:
               command: "apply"
