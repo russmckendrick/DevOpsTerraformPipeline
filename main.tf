@@ -1,21 +1,22 @@
 # Setup
 ######################################################################################################
 
-# What is the minimum version of Terraform we need?
 terraform {
   required_version = ">= 0.15.0"
   required_providers {
     azurerm = {
-      # https://registry.terraform.io/providers/hashicorp/azurerm/latest
       source  = "hashicorp/azurerm"
       version = "=2.46.0"
     }
   }
 }
 
+# Configure the Microsoft Azure Provider
 provider "azurerm" {
   features {}
 }
+
+
 
 # Create the resource group
 ######################################################################################################
