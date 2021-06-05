@@ -16,9 +16,11 @@ pool:
   vmImage: "ubuntu-latest"
 
 steps:
-  - task: NodeTool@0
-    inputs:
-      versionSpec: "12.x"
+  - bash: |
+      docker pull accurics/terrascan
+      echo $(docker run --rm -t -v $(pwd):/iac -w /iac accurics/terrascan scan -o junit-xml) > Terrascan-Report.xml
+    workingDirectory: $(System.DefaultWorkingDirectory)
+    displayName: "Run > Terrascan"
 
   - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
     displayName: "Install > terraform"
@@ -50,12 +52,6 @@ steps:
       backendAzureRmStorageAccountName: "$(tf_state_sa_name)"
       backendAzureRmContainerName: $(tf_state_container_name)
       backendAzureRmKey: "$(tf_environment).terraform.tstate"
-
-  - bash: |
-      docker pull accurics/terrascan
-      docker run --rm -t -v $(pwd):/iac -w /iac accurics/terrascan scan -o junit-xml
-    workingDirectory: $(System.DefaultWorkingDirectory)
-    displayName: "Run > Terrascan"
 
   - task: PublishTestResults@2
     displayName: "Publish Terrascan results"
