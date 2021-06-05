@@ -15,62 +15,93 @@ variables:
 pool:
   vmImage: "ubuntu-latest"
 
-steps:
-  - bash: |
-      docker pull accurics/terrascan
-      echo $(docker run --rm -t -v $(pwd):/iac -w /iac accurics/terrascan scan -o junit-xml) > Terrascan-Report.xml
-    workingDirectory: $(System.DefaultWorkingDirectory)
-    displayName: "Run > Terrascan"
+stages:
+  # Run Terrascan, upload results and halt if there any problems found
+  ######################################################################
 
-  - task: PublishTestResults@2
-    displayName: "Publish > Terrascan scan results"
-    inputs:
-      testRunTitle: "Terrascan Results"
-      failTaskOnFailedTests: true
-      testResultsFormat: "JUnit"
-      testResultsFiles: "Terrascan-Report.xml"
-      searchFolder: "$(System.DefaultWorkingDirectory)"
+  - stage: "runTerrascan"
+    displayName: "Run Terrascan"
+    jobs:
+      - job: "runTerrascan"
+        displayName: "Download, run and publish results of Terrascan scan"
+        steps:
+          - bash: |
+              docker pull accurics/terrascan
+            workingDirectory: $(System.DefaultWorkingDirectory)
+            displayName: "Pull > Terrascan"
 
-  - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
-    displayName: "Install > terraform"
-    inputs:
-      terraformVersion: "$(tf_version)"
+          - bash: |
+              echo $(docker run --rm -t -v $(pwd):/iac -w /iac accurics/terrascan scan -o junit-xml) > Terrascan-Report.xml
+            workingDirectory: $(System.DefaultWorkingDirectory)
+            displayName: "Run > Terrascan"
 
-  - task: AzureCLI@2
-    displayName: "Create/Check the Terraform Statefile Azure Storage Account"
-    inputs:
-      azureSubscription: "$(SUBSCRIPTION_NAME)"
-      addSpnToEnvironment: true
-      scriptType: "bash"
-      scriptLocation: "inlineScript"
-      inlineScript: |
-        TAGS=$(tf_state_tags)
-        az group create --name $(tf_state_rg) --location $(tz_state_location) --tags "${TAGS[@]}"
-        az storage account create --resource-group $(tf_state_rg) --name $(tf_state_sa_name) --sku Standard_GRS --encryption-services blob --tags "${TAGS[@]}"
-        ACCOUNT_KEY=$(az storage account keys list --resource-group $(tf_state_rg) --account-name $(tf_state_sa_name) --query [0].value -o tsv)
-        az storage container create --name $(tf_state_container_name) --account-name $(tf_state_sa_name) --account-key $ACCOUNT_KEY
-        echo "##vso[task.setvariable variable=tf_state_sa_key]$ACCOUNT_KEY"
+          - task: PublishTestResults@2
+            displayName: "Publish > Terrascan scan results"
+            inputs:
+              testRunTitle: "Terrascan Results"
+              failTaskOnFailedTests: true
+              testResultsFormat: "JUnit"
+              testResultsFiles: "Terrascan-Report.xml"
+              searchFolder: "$(System.DefaultWorkingDirectory)"
 
-  - task: TerraformCLI@0
-    displayName: "Run > terraform init"
-    inputs:
-      command: "init"
-      backendServiceArm: "$(SUBSCRIPTION_NAME)"
-      backendType: "azurerm"
-      backendAzureRmResourceGroupName: "$(tf_state_rg)"
-      backendAzureRmStorageAccountName: "$(tf_state_sa_name)"
-      backendAzureRmContainerName: $(tf_state_container_name)
-      backendAzureRmKey: "$(tf_environment).terraform.tstate"
+  # Check the Statefile Azure Storage Account exists
+  ######################################################################
 
-  - task: TerraformCLI@0
-    displayName: "Run > terraform plan"
-    inputs:
-      command: "plan"
-      environmentServiceNameAzureRM: "$(SUBSCRIPTION_NAME)"
-      publishPlanResults: "PlanResults"
+  - stage: "checkStatefile"
+    displayName: "Configure Terraform Statefile Storage Account"
+    jobs:
+      - job: "runTerrascan"
+        displayName: "Create/Check the Terraform Statefile Azure Storage Account"
+        steps:
+          - task: AzureCLI@2
+            displayName: "Create/Check > Terraform Statefile Azure Storage Account"
+            inputs:
+              azureSubscription: "$(SUBSCRIPTION_NAME)"
+              addSpnToEnvironment: true
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                TAGS=$(tf_state_tags)
+                az group create --name $(tf_state_rg) --location $(tz_state_location) --tags "${TAGS[@]}"
+                az storage account create --resource-group $(tf_state_rg) --name $(tf_state_sa_name) --sku Standard_GRS --encryption-services blob --tags "${TAGS[@]}"
+                ACCOUNT_KEY=$(az storage account keys list --resource-group $(tf_state_rg) --account-name $(tf_state_sa_name) --query [0].value -o tsv)
+                az storage container create --name $(tf_state_container_name) --account-name $(tf_state_sa_name) --account-key $ACCOUNT_KEY
+                echo "##vso[task.setvariable variable=tf_state_sa_key]$ACCOUNT_KEY"
 
-  - task: TerraformCLI@0
-    displayName: "Run > terraform apply"
-    inputs:
-      command: "apply"
-      environmentServiceNameAzureRM: "$(SUBSCRIPTION_NAME)"
+  # Check the Statefile Azure Storage Account exists
+  ######################################################################
+
+  - stage: "runTerraform"
+    displayName: "Download and run Terraform"
+    jobs:
+      - job: "runTerrascan"
+        displayName: "Download and run Terraform"
+        steps:
+          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
+            displayName: "Install > terraform"
+            inputs:
+              terraformVersion: "$(tf_version)"
+
+          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformCLI@0
+            displayName: "Run > terraform init"
+            inputs:
+              command: "init"
+              backendServiceArm: "$(SUBSCRIPTION_NAME)"
+              backendType: "azurerm"
+              backendAzureRmResourceGroupName: "$(tf_state_rg)"
+              backendAzureRmStorageAccountName: "$(tf_state_sa_name)"
+              backendAzureRmContainerName: $(tf_state_container_name)
+              backendAzureRmKey: "$(tf_environment).terraform.tstate"
+
+          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformCLI@0
+            displayName: "Run > terraform plan"
+            inputs:
+              command: "plan"
+              environmentServiceNameAzureRM: "$(SUBSCRIPTION_NAME)"
+              publishPlanResults: "PlanResults"
+
+          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformCLI@0
+            displayName: "Run > terraform apply"
+            inputs:
+              command: "apply"
+              environmentServiceNameAzureRM: "$(SUBSCRIPTION_NAME)"
