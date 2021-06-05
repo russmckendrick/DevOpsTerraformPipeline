@@ -22,6 +22,15 @@ steps:
     workingDirectory: $(System.DefaultWorkingDirectory)
     displayName: "Run > Terrascan"
 
+  - task: PublishTestResults@2
+    displayName: "Publish > Terrascan scan results"
+    inputs:
+      testRunTitle: "Terrascan Results"
+      failTaskOnFailedTests: true
+      testResultsFormat: "JUnit"
+      testResultsFiles: "Terrascan-Report.xml"
+      searchFolder: "$(System.DefaultWorkingDirectory)"
+
   - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
     displayName: "Install > terraform"
     inputs:
@@ -52,13 +61,6 @@ steps:
       backendAzureRmStorageAccountName: "$(tf_state_sa_name)"
       backendAzureRmContainerName: $(tf_state_container_name)
       backendAzureRmKey: "$(tf_environment).terraform.tstate"
-
-  - task: PublishTestResults@2
-    displayName: "Publish Terrascan results"
-    inputs:
-      testResultsFormat: "JUnit"
-      testResultsFiles: "Terrascan-Report.xml"
-      searchFolder: "$(System.DefaultWorkingDirectory)"
 
   - task: TerraformCLI@0
     displayName: "Run > terraform plan"
