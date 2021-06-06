@@ -95,7 +95,7 @@ stages:
       - "validateTerraform"
     jobs:
       - job: "TerraformJobs"
-        displayName: "Terraform > install, init, plan"
+        displayName: "Terraform > install, init & plan"
         steps:
           - task: TerraformInstaller@0
             inputs:
