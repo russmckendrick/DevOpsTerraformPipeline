@@ -55,7 +55,7 @@ resource "azurerm_resource_group" "resource_group2" {
   tags     = merge(var.default_tags, tomap({ "type" = "resource" }))
 }
 
-resource "azurerm_management_lock" "resource-group-lock" {
+resource "azurerm_management_lock" "resource-group-lock2" {
   name       = "resource-group-lock"
   scope      = azurerm_resource_group.resource_group2.id
   lock_level = "CanNotDelete"
