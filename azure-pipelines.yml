@@ -130,7 +130,6 @@ stages:
         (
           succeeded(),
           eq(variables['TERRAFORM_PLAN_HAS_CHANGES'], 'true'),
-          eq(variables['TERRAFORM_PLAN_HAS_DESTROY_CHANGES'], 'false')
           )
     jobs:
       - job: "TerraformJobs"
@@ -170,7 +169,6 @@ stages:
       and
         (
           succeeded(),
-          eq(variables['TERRAFORM_PLAN_HAS_CHANGES'], 'true'),
           eq(variables['TERRAFORM_PLAN_HAS_DESTROY_CHANGES'], 'true')
         )
     jobs:
