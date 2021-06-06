@@ -130,7 +130,7 @@ stages:
       and
         (
           succeeded(),
-          eq(dependencies.planTerraform.outputs['TerraformJobs.plan.TERRAFORM_PLAN_HAS_CHANGES'], 'true'))
+          eq(dependencies.planTerraform.outputs['TerraformJobs.plan.TERRAFORM_PLAN_HAS_CHANGES'], 'true')
         )
     jobs:
       - job: "TerraformJobs"
@@ -170,7 +170,7 @@ stages:
       and
         (
           succeeded(),
-          eq(dependencies.planTerraform.outputs['TerraformJobs.plan.TERRAFORM_PLAN_HAS_DESTROY_CHANGES'], 'true'))
+          eq(dependencies.planTerraform.outputs['TerraformJobs.plan.TERRAFORM_PLAN_HAS_DESTROY_CHANGES'], 'true')
         )
     jobs:
       - job: "TerraformJobs"
