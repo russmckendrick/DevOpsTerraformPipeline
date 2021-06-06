@@ -135,18 +135,25 @@ stages:
           - bash: |
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] ; then
                 echo "##vso[task.setvariable variable=HAS_CHANGES_ONLY;isOutput=true]true"
-                echo "##[warning]Changes with no destroys detected, it is safe for the pipeline to proceed automatically"
-              fi
+                echo "##vso[task.logissue type=warning]Changes with no destroys detected, it is safe for the pipeline to proceed automatically"
+                fi
 
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = true ] ; then
                 echo "##vso[task.setvariable variable=HAS_DESTROY_CHANGES;isOutput=true]true"
-                echo "##[warning]Changes with Destroy detected, pipeline will require a manual approval to proceed"
-              fi
+                echo "##vso[task.logissue type=warning]Changes with Destroy detected, pipeline will require a manual approval to proceed"
+
+                fi
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" != true ] ; then
-                echo "##[warning]No changes detected, terraform apply will not run"
+                echo "##vso[task.logissue type=warning]No changes detected, terraform apply will not run"
               fi
             name: "setvar"
             displayName: "Vars > Set Variables for next stage"
+
+  # Auto Approval Terraform - uses the following ...
+  # https://marketplace.visualstudio.com/items?itemName=charleszipp.azure-pipelines-tasks-terraform
+  # Will run the terraform apply if there are are only changes and
+  # nothing to be destroyed
+  ######################################################################
 
   - stage: "autoTerraform"
     displayName: "Terraform - Auto Approval"
@@ -186,6 +193,12 @@ stages:
               command: "apply"
               environmentServiceName: "$(SUBSCRIPTION_NAME)"
             displayName: "Run > terraform apply"
+
+  # Manual Approval Terraform - uses the following ...
+  # https://marketplace.visualstudio.com/items?itemName=charleszipp.azure-pipelines-tasks-terraform
+  # Will wait for changes to be approved if there are any resources
+  # which are  being destroyed
+  ######################################################################
 
   - stage: "approveTerraform"
     displayName: "Terraform - Manual Approval"
