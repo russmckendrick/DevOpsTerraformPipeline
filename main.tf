@@ -30,7 +30,7 @@ provider "azurecaf" {
 ######################################################################################################
 
 resource "azurecaf_name" "rg_example" {
-  name          = "demogroup3"
+  name          = "demogroup"
   resource_type = "azurerm_resource_group"
   prefixes      = ["dev"]
   clean_input   = true
@@ -45,19 +45,6 @@ resource "azurerm_resource_group" "resource_group" {
 resource "azurerm_management_lock" "resource-group-lock" {
   name       = "resource-group-lock"
   scope      = azurerm_resource_group.resource_group.id
-  lock_level = "CanNotDelete"
-  notes      = "This Resource Group can not be deleted"
-}
-
-resource "azurerm_resource_group" "resource_group2" {
-  name     = "wibble"
-  location = "uksouth"
-  tags     = merge(var.default_tags, tomap({ "type" = "resource" }))
-}
-
-resource "azurerm_management_lock" "resource-group-lock2" {
-  name       = "resource-group-lock"
-  scope      = azurerm_resource_group.resource_group2.id
   lock_level = "CanNotDelete"
   notes      = "This Resource Group can not be deleted"
 }
