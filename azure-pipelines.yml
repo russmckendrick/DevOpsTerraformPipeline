@@ -5,18 +5,20 @@ trigger:
 
 variables:
   tf_version: "latest" # what version of terraform should be used
+  tf_state_create: "true" # if thw storeage account below does not exist then create it
   tf_state_rg: "rg-blogpost-tfstate" # name of the resource group to create/use for the terraform state file
   tz_state_location: "uksouth" # location of the resource group to create/use for the terraform state file
   tf_state_sku: "Standard_RAGRS" # sku to use when creating the storeage account to create/use for the terraform state file
   tf_state_sa_name: "blogposttfstatesa" # name of of the storage account to create/use for the terraform state file
   tf_state_container_name: "tfstate" # name of of the container to create/use for the terraform state file
   tf_environment: "dev" # enviroment name, used for the statefile name
+  checkov_fail_on_error: "true"
 
 pool:
   vmImage: "ubuntu-latest"
 
 stages:
-  # Run Checkov, upload results and halt if there any problems found
+  # Run Checkov, upload results and optionally halt if there any problems found
   ######################################################################
 
   - stage: "runCheckov"
@@ -38,13 +40,14 @@ stages:
           - task: PublishTestResults@2
             inputs:
               testRunTitle: "Checkov Results"
-              failTaskOnFailedTests: true
+              failTaskOnFailedTests: "${checkov_fail_on_error}"
               testResultsFormat: "JUnit"
               testResultsFiles: "CheckovReport.xml"
               searchFolder: "$(System.DefaultWorkingDirectory)"
             displayName: "Publish > Checkov scan results"
 
-  # Validate Terraform - uses https://marketplace.visualstudio.com/items?itemName=charleszipp.azure-pipelines-tasks-terraform
+  # Validate Terraform - uses the following ...
+  # https://marketplace.visualstudio.com/items?itemName=charleszipp.azure-pipelines-tasks-terraform
   ######################################################################
 
   - stage: "validateTerraform"
@@ -66,7 +69,7 @@ stages:
               command: "init"
               backendType: "azurerm"
               backendServiceArm: "$(SUBSCRIPTION_NAME)"
-              ensureBackend: true
+              ensureBackend: "$(tf_state_create)"
               backendAzureRmResourceGroupName: "$(tf_state_rg)"
               backendAzureRmResourceGroupLocation: "$(tz_state_location)"
               backendAzureRmStorageAccountName: "$(tf_state_sa_name)"
@@ -81,7 +84,8 @@ stages:
               environmentServiceName: "$(SUBSCRIPTION_NAME)"
             displayName: "Run > terraform validate"
 
-  # Run Terraform - uses https://marketplace.visualstudio.com/items?itemName=charleszipp.azure-pipelines-tasks-terraform
+  # Run Terraform - uses the following ...
+  # https://marketplace.visualstudio.com/items?itemName=charleszipp.azure-pipelines-tasks-terraform
   ######################################################################
 
   - stage: "runTerraform"
