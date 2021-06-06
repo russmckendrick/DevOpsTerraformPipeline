@@ -123,12 +123,12 @@ stages:
             displayName: "Run > terraform plan"
 
           - bash: |
-              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] ; then
-                echo "##vso[task.setvariable variable=TERRAFORM_PLAN_HAS_CHANGES;isOutput=true]true"
+              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] ; then
+                echo "##vso[task.setvariable variable=HAS_CHANGES_ONLY;isOutput=true]true"
               fi
 
-              if [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = true ] ; then
-                echo "##vso[task.setvariable variable=TERRAFORM_PLAN_HAS_DESTROY_CHANGES;isOutput=true]true"
+              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = true ] ; then
+                echo "##vso[task.setvariable variable=HAS_DESTROY_CHANGES;isOutput=true]true"
               fi
             name: setvar
 
@@ -140,7 +140,7 @@ stages:
       and
         (
           succeeded(),
-          eq(dependencies.planTerraform.outputs['TerraformJobs.setvar.TERRAFORM_PLAN_HAS_CHANGES'], 'true')
+          eq(dependencies.planTerraform.outputs['TerraformJobs.setvar.HAS_CHANGES_ONLY'], 'true')
         )
     jobs:
       - job: "TerraformAudo"
@@ -169,7 +169,6 @@ stages:
             inputs:
               command: "apply"
               environmentServiceName: "$(SUBSCRIPTION_NAME)"
-              commandOptions: "$(System.DefaultWorkingDirectory)/terraform.tfplan"
             displayName: "Run > terraform apply"
 
   - stage: "approveTerraform"
@@ -180,7 +179,7 @@ stages:
       and
         (
           succeeded(),
-          eq(dependencies.planTerraform.outputs['TerraformJobs.setvar.TERRAFORM_PLAN_HAS_DESTROY_CHANGES'], 'true')
+          eq(dependencies.planTerraform.outputs['TerraformJobs.setvar.HAS_DESTROY_CHANGES'], 'true')
         )
     jobs:
       - job: "TerraformApprove"
@@ -209,5 +208,4 @@ stages:
             inputs:
               command: "apply"
               environmentServiceName: "$(SUBSCRIPTION_NAME)"
-              commandOptions: "$(System.DefaultWorkingDirectory)/terraform.tfplan"
             displayName: "Run > terraform apply"
