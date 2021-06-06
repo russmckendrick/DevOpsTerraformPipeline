@@ -119,6 +119,7 @@ stages:
               environmentServiceName: "$(SUBSCRIPTION_NAME)"
               publishPlanResults: "PlanResults"
               commandOptions: "-out=$(System.DefaultWorkingDirectory)/terraform.tfplan -detailed-exitcode"
+            name: "plan"
             displayName: "Run > terraform plan"
 
   - stage: "autoTerraform"
@@ -129,8 +130,8 @@ stages:
       and
         (
           succeeded(),
-          eq(variables['TERRAFORM_PLAN_HAS_CHANGES'], 'true')
-          )
+          eq(dependencies.planTerraform.outputs['TerraformJobs.plan.TERRAFORM_PLAN_HAS_CHANGES'], 'true'))
+        )
     jobs:
       - job: "TerraformJobs"
         displayName: "Terraform > install, init, plan"
@@ -169,7 +170,7 @@ stages:
       and
         (
           succeeded(),
-          eq(variables['TERRAFORM_PLAN_HAS_DESTROY_CHANGES'], 'true')
+          eq(dependencies.planTerraform.outputs['TerraformJobs.plan.TERRAFORM_PLAN_HAS_DESTROY_CHANGES'], 'true'))
         )
     jobs:
       - job: "TerraformJobs"
