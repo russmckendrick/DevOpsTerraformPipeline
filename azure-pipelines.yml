@@ -221,7 +221,7 @@ stages:
             inputs:
               notifyUsers: |
                 azure@mckendrick.io
-              instructions: "There are resources being destoryed as part of this deployment, please review the output of Terraform plan before approving."
+              instructions: "There are resources being destroyed as part of this deployment, please review the output of Terraform plan before approving."
               onTimeout: "reject"
 
       - job: "TerraformApprove"
