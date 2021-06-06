@@ -122,6 +122,16 @@ stages:
             name: "plan"
             displayName: "Run > terraform plan"
 
+          - bash: |
+              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] ; then
+                echo "##vso[task.setvariable variable=TERRAFORM_PLAN_HAS_CHANGES;isOutput=true]true"
+              fi
+
+              if [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = true ] ; then
+                echo "##vso[task.setvariable variable=TERRAFORM_PLAN_HAS_DESTROY_CHANGES;isOutput=true]true"
+              fi
+            name: setvar
+
   - stage: "autoTerraform"
     displayName: "Terraform - Auto Approval"
     dependsOn:
@@ -130,10 +140,10 @@ stages:
       and
         (
           succeeded(),
-          eq(dependencies.planTerraform.outputs['TerraformJobs.plan.TERRAFORM_PLAN_HAS_CHANGES'], 'true')
+          eq(dependencies.planTerraform.outputs['TerraformJobs.setvar.TERRAFORM_PLAN_HAS_CHANGES'], 'true')
         )
     jobs:
-      - job: "TerraformJobs"
+      - job: "TerraformAudo"
         displayName: "Terraform > install, init, plan"
         steps:
           - task: TerraformInstaller@0
@@ -170,10 +180,10 @@ stages:
       and
         (
           succeeded(),
-          eq(dependencies.planTerraform.outputs['TerraformJobs.plan.TERRAFORM_PLAN_HAS_DESTROY_CHANGES'], 'true')
+          eq(dependencies.planTerraform.outputs['TerraformJobs.setvar.TERRAFORM_PLAN_HAS_DESTROY_CHANGES'], 'true')
         )
     jobs:
-      - job: "TerraformJobs"
+      - job: "TerraformApprove"
         displayName: "Terraform > install, init, plan"
         steps:
           - task: TerraformInstaller@0
