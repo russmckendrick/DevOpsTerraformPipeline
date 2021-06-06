@@ -82,18 +82,17 @@ stages:
               environmentServiceName: "$(SUBSCRIPTION_NAME)"
             displayName: "Run > terraform validate"
 
-  # Run Terraform - uses the following ...
+  # Plan Terraform - uses the following ...
   # https://marketplace.visualstudio.com/items?itemName=charleszipp.azure-pipelines-tasks-terraform
   ######################################################################
 
-  - stage: "runTerraform"
-    displayName: "Terraform - Tasks"
+  - stage: "planTerraform"
+    displayName: "Terraform - Plan"
     dependsOn:
-      - "runCheckov"
       - "validateTerraform"
     jobs:
       - job: "TerraformJobs"
-        displayName: "Terraform > install, init, plan & apply"
+        displayName: "Terraform > install, init, plan"
         steps:
           - task: TerraformInstaller@0
             inputs:
@@ -122,8 +121,120 @@ stages:
               commandOptions: "-out=$(System.DefaultWorkingDirectory)/terraform.tfplan -detailed-exitcode"
             displayName: "Run > terraform plan"
 
+  - stage: "autoTerraform"
+    dependsOn:
+      - "planTerraform"
+    condition: |
+      and
+        (
+          succeeded(),
+          eq(variables['TERRAFORM_PLAN_HAS_CHANGES'], 'true')
+        )
+    jobs:
+      - job: "TerraformJobs"
+        displayName: "Terraform > install, init, plan"
+        steps:
+          - task: TerraformInstaller@0
+            inputs:
+              terraformVersion: "$(tf_version)"
+            displayName: "Install > terraform"
+
           - task: TerraformCLI@0
-            condition: and(succeeded(), eq(variables['TERRAFORM_PLAN_HAS_CHANGES'], 'true'))
+            inputs:
+              command: "init"
+              backendType: "azurerm"
+              backendServiceArm: "$(SUBSCRIPTION_NAME)"
+              ensureBackend: true
+              backendAzureRmResourceGroupName: "$(tf_state_rg)"
+              backendAzureRmResourceGroupLocation: "$(tz_state_location)"
+              backendAzureRmStorageAccountName: "$(tf_state_sa_name)"
+              backendAzureRmStorageAccountSku: "Standard_RAGRS"
+              backendAzureRmContainerName: $(tf_state_container_name)
+              backendAzureRmKey: "$(tf_environment).terraform.tstate"
+            displayName: "Run > terraform init"
+
+  - stage: "autoTerraform"
+    dependsOn:
+      - "planTerraform"
+    condition: |
+      and
+        (
+          succeeded(),
+          eq(variables['TERRAFORM_PLAN_HAS_CHANGES'], 'true'),
+          eq(variables['TERRAFORM_PLAN_HAS_DESTROY_CHANGES'], 'false')
+          )
+    jobs:
+      - job: "TerraformJobs"
+        displayName: "Terraform > install, init, plan"
+        steps:
+          - task: TerraformInstaller@0
+            inputs:
+              terraformVersion: "$(tf_version)"
+            displayName: "Install > terraform"
+
+          - task: TerraformCLI@0
+            inputs:
+              command: "init"
+              backendType: "azurerm"
+              backendServiceArm: "$(SUBSCRIPTION_NAME)"
+              ensureBackend: true
+              backendAzureRmResourceGroupName: "$(tf_state_rg)"
+              backendAzureRmResourceGroupLocation: "$(tz_state_location)"
+              backendAzureRmStorageAccountName: "$(tf_state_sa_name)"
+              backendAzureRmStorageAccountSku: "Standard_RAGRS"
+              backendAzureRmContainerName: $(tf_state_container_name)
+              backendAzureRmKey: "$(tf_environment).terraform.tstate"
+            displayName: "Run > terraform init"
+
+          - task: TerraformCLI@0
+            inputs:
+              command: "apply"
+              environmentServiceName: "$(SUBSCRIPTION_NAME)"
+              commandOptions: "$(System.DefaultWorkingDirectory)/terraform.tfplan"
+            displayName: "Run > terraform apply"
+
+  - stage: "autoTerraform"
+    dependsOn:
+      - "planTerraform"
+    condition: |
+      and
+        (
+          succeeded(),
+          eq(variables['TERRAFORM_PLAN_HAS_CHANGES'], 'true'),
+          eq(variables['TERRAFORM_PLAN_HAS_DESTROY_CHANGES'], 'true')
+        )
+    jobs:
+      - job: "TerraformJobs"
+        displayName: "Terraform > install, init, plan"
+        steps:
+          - task: ManualValidation@0
+            timeoutInMinutes: 1440 # task times out in 1 day
+            inputs:
+              notifyUsers: |
+                russ@mckendrick.io
+              instructions: "Please validate the build configuration and resume"
+              onTimeout: "reject"
+
+          - task: TerraformInstaller@0
+            inputs:
+              terraformVersion: "$(tf_version)"
+            displayName: "Install > terraform"
+
+          - task: TerraformCLI@0
+            inputs:
+              command: "init"
+              backendType: "azurerm"
+              backendServiceArm: "$(SUBSCRIPTION_NAME)"
+              ensureBackend: true
+              backendAzureRmResourceGroupName: "$(tf_state_rg)"
+              backendAzureRmResourceGroupLocation: "$(tz_state_location)"
+              backendAzureRmStorageAccountName: "$(tf_state_sa_name)"
+              backendAzureRmStorageAccountSku: "Standard_RAGRS"
+              backendAzureRmContainerName: $(tf_state_container_name)
+              backendAzureRmKey: "$(tf_environment).terraform.tstate"
+            displayName: "Run > terraform init"
+
+          - task: TerraformCLI@0
             inputs:
               command: "apply"
               environmentServiceName: "$(SUBSCRIPTION_NAME)"
