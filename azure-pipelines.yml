@@ -153,7 +153,7 @@ stages:
               backendAzureRmKey: "$(tf_environment).terraform.tstate"
             displayName: "Run > terraform init"
 
-  - stage: "autoTerraform"
+  - stage: "approveTerraform"
     dependsOn:
       - "planTerraform"
     condition: |
