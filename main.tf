@@ -22,8 +22,8 @@ provider "azurerm" {
   features {}
 }
 
+# Configure the Azure CAF Provider
 provider "azurecaf" {
-  features {}
 }
 
 # Create the resource group
