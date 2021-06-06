@@ -30,7 +30,7 @@ provider "azurecaf" {
 ######################################################################################################
 
 resource "azurecaf_name" "rg_example" {
-  name          = "demogroup2"
+  name          = "demogroup3"
   resource_type = "azurerm_resource_group"
   prefixes      = ["dev"]
   clean_input   = true

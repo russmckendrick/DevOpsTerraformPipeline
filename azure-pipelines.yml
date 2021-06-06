@@ -139,8 +139,7 @@ stages:
                 echo "##vso[task.setvariable variable=HAS_DESTROY_CHANGES;isOutput=true]true"
                 echo "##[section]Changes with Destroy detected, pipeline will require a manual approval to proceed"
               fi
-
-              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = false ] ; then
+              if [ -z "$TERRAFORM_PLAN_HAS_CHANGES+x" ] ; then
                 echo "##[section]No changes detected, terraform apply will not run"
               fi
             name: "setvar"
@@ -205,12 +204,13 @@ stages:
             timeoutInMinutes: 1440 # task times out in 1 day
             inputs:
               notifyUsers: |
-                russ@mckendrick.io
+                azure@mckendrick.io
               instructions: "Please validate the build configuration and resume"
               onTimeout: "reject"
 
       - job: "TerraformApprove"
         displayName: "Terraform > install, init & apply"
+        dependsOn: "waitForValidation"
         steps:
           - task: TerraformInstaller@0
             inputs:
