@@ -23,7 +23,7 @@ stages:
     displayName: "Checkov - Scan Terraform files"
     jobs:
       - job: "runCheckov"
-        displayName: "Download, run and publish results of Checkov scan"
+        displayName: "Checkov > Pull, run and publish results of Checkov scan"
         steps:
           - bash: |
               docker pull bridgecrew/checkov
@@ -212,16 +212,16 @@ stages:
         )
     jobs:
       - job: "waitForValidation"
-        displayName: "Wait for manual appoval"
-        pool: server
-        timeoutInMinutes: 4320 # job times out in 3 days
+        displayName: "Wait > Wait for manual appoval"
+        pool: "server"
+        timeoutInMinutes: "4320" # job times out in 3 days
         steps:
           - task: ManualValidation@0
-            timeoutInMinutes: 1440 # task times out in 1 day
+            timeoutInMinutes: "1440" # task times out in 1 day
             inputs:
               notifyUsers: |
                 azure@mckendrick.io
-              instructions: "Please validate the build configuration and resume"
+              instructions: "There are resources being destoryed as part of this deployment, please review the output of Terraform plan before approving."
               onTimeout: "reject"
 
       - job: "TerraformApprove"
