@@ -1,14 +1,14 @@
 # Terraform pipeline
 
 trigger:
-  - master
+  - main
 
 variables:
   tf_version: "latest" # what version of terraform should be used
-  tf_state_rg: "rg-blogpost-tfstate" # name of the resource group to create/use for the terraform state file
+  tf_state_rg: "rg-tfstate" # name of the resource group to create/use for the terraform state file
   tz_state_location: "uksouth" # location of the resource group to create/use for the terraform state file
   tf_state_sku: "Standard_RAGRS" # sku to use when creating the storeage account to create/use for the terraform state file
-  tf_state_sa_name: "blogposttfstatesa" # name of of the storage account to create/use for the terraform state file
+  tf_state_sa_name: "tfstatesa20210606" # name of of the storage account to create/use for the terraform state file
   tf_state_container_name: "tfstate" # name of of the container to create/use for the terraform state file
   tf_environment: "dev" # enviroment name, used for the statefile name
 
@@ -68,7 +68,7 @@ stages:
               backendType: "azurerm"
               backendServiceArm: "$(SUBSCRIPTION_NAME)"
               ensureBackend: true
-              backendAzureRmResourceGroupName: "$(tf_state_rg)"
+              backendAzureRmResourceGroupName: "$(tf_environment)-$(tf_state_rg)"
               backendAzureRmResourceGroupLocation: "$(tz_state_location)"
               backendAzureRmStorageAccountName: "$(tf_state_sa_name)"
               backendAzureRmStorageAccountSku: "Standard_RAGRS"
@@ -166,7 +166,7 @@ stages:
           eq(dependencies.planTerraform.outputs['TerraformJobs.setvar.HAS_CHANGES_ONLY'], 'true')
         )
     jobs:
-      - job: "TerraformAudo"
+      - job: "TerraformAuto"
         displayName: "Terraform > install, init & apply"
         steps:
           - task: TerraformInstaller@0
