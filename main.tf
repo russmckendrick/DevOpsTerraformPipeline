@@ -85,7 +85,7 @@ resource azurerm_network_security_group "nsg" {
     name                       = azurecaf_name.ssh
     priority                   = 200
     protocol                   = "TCP"
-    source_address_prefix      = "*"
+    source_address_prefix      = "123.123.123.123/32"
     source_port_range          = "*"
     destination_port_range     = "22-22"
     destination_address_prefix = "*"
@@ -97,7 +97,7 @@ resource azurerm_network_security_group "nsg" {
     name                       = azurecaf_name.rdp
     priority                   = 300
     protocol                   = "TCP"
-    source_address_prefix      = "*"
+    source_address_prefix      = "123.123.123.123/32"
     source_port_range          = "*"
     destination_port_range     = "3389-3389"
     destination_address_prefix = "*"
