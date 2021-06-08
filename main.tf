@@ -48,3 +48,58 @@ resource "azurerm_management_lock" "resource-group-lock" {
   lock_level = "CanNotDelete"
   notes      = "This Resource Group can not be deleted"
 }
+
+# Create the nsg
+######################################################################################################
+
+
+resource "azurecaf_name" "nsg" {
+  name          = "demo"
+  resource_type = "azurerm_network_security_group"
+  prefixes      = ["dev"]
+  clean_input   = true
+}
+
+resource "azurecaf_name" "ssh" {
+  name          = "ssh"
+  resource_type = "azurerm_network_security_rule"
+  prefixes      = ["dev"]
+  clean_input   = true
+}
+
+resource "azurecaf_name" "rdp" {
+  name          = "rdp"
+  resource_type = "azurerm_network_security_rule"
+  prefixes      = ["dev"]
+  clean_input   = true
+}
+
+resource azurerm_network_security_group "nsg" {
+  name                = azurecaf_name.nsg
+  resource_group_name = azurerm_resource_group.resource_group.name
+  location            = azurerm_resource_group.resource_group.location
+
+  security_rule {
+    access                     = "Allow"
+    direction                  = "Inbound"
+    name                       = azurecaf_name.ssh
+    priority                   = 200
+    protocol                   = "TCP"
+    source_address_prefix      = "*"
+    source_port_range          = "*"
+    destination_port_range     = "22-22"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    access                     = "Allow"
+    direction                  = "Inbound"
+    name                       = azurecaf_name.rdp
+    priority                   = 300
+    protocol                   = "TCP"
+    source_address_prefix      = "*"
+    source_port_range          = "*"
+    destination_port_range     = "3389-3389"
+    destination_address_prefix = "*"
+  }
+}
