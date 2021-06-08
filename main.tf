@@ -42,13 +42,6 @@ resource "azurerm_resource_group" "resource_group" {
   tags     = merge(var.default_tags, tomap({ "type" = "resource" }))
 }
 
-resource "azurerm_management_lock" "resource-group-lock" {
-  name       = "resource-group-lock"
-  scope      = azurerm_resource_group.resource_group.id
-  lock_level = "CanNotDelete"
-  notes      = "This Resource Group can not be deleted"
-}
-
 # Create the nsg (bad code)
 ######################################################################################################
 
