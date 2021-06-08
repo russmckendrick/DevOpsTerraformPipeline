@@ -75,14 +75,14 @@ resource "azurecaf_name" "rdp" {
 }
 
 resource azurerm_network_security_group "nsg" {
-  name                = azurecaf_name.nsg
+  name                = azurecaf_name.nsg.result
   resource_group_name = azurerm_resource_group.resource_group.name
   location            = azurerm_resource_group.resource_group.location
 
   security_rule {
     access                     = "Allow"
     direction                  = "Inbound"
-    name                       = azurecaf_name.ssh
+    name                       = azurecaf_name.ssh.result
     priority                   = 200
     protocol                   = "TCP"
     source_address_prefix      = "123.123.123.123/32"
@@ -94,7 +94,7 @@ resource azurerm_network_security_group "nsg" {
   security_rule {
     access                     = "Allow"
     direction                  = "Inbound"
-    name                       = azurecaf_name.rdp
+    name                       = azurecaf_name.rdp.result
     priority                   = 300
     protocol                   = "TCP"
     source_address_prefix      = "123.123.123.123/32"
