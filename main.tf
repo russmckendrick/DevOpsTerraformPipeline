@@ -45,7 +45,6 @@ resource "azurerm_resource_group" "resource_group" {
 # Create the nsg (bad code)
 ######################################################################################################
 
-
 # resource "azurecaf_name" "nsg" {
 #   name          = "demo"
 #   resource_type = "azurerm_network_security_group"
@@ -99,7 +98,6 @@ resource "azurerm_resource_group" "resource_group" {
 
 # Create the nsg (good code)
 ######################################################################################################
-
 
 # resource "azurecaf_name" "nsg" {
 #   name          = "demo"
