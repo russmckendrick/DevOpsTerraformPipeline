@@ -3,6 +3,7 @@
 trigger:
   - main
 
+  
 variables:
   tf_version: "latest" # what version of terraform should be used
   tf_state_rg: "rg-tfstate" # name of the resource group to create/use for the terraform state file
@@ -151,9 +152,8 @@ stages:
               if [ "$raw_resources" == "[]" ]; then
                   echo "##vso[task.logissue type=warning]Pipeline run has no supported Infracost resouces or it has been run for the first time"
                   do_check=false
-                  HAS_COST_DIFFERENCE=false
               elif [[ "$raw_resources" != "[]" ]]; then
-                  do_check=true
+                do_check=true
               fi
 
               raw_past_cost=$(jq -r '.projects[0].pastBreakdown.totalMonthlyCost' $(System.DefaultWorkingDirectory)/output/cost.json)
@@ -165,14 +165,13 @@ stages:
               if [ "$future_cost" -gt "$past_cost" ] && [ "$do_check" == true ]; then
                 difference=`expr $future_cost - $past_cost`
                 echo "##vso[task.logissue type=warning]Change in cost found, it is going up by around $"$difference" per month"
-                HAS_COST_DIFFERENCE=true
+                HAS_COST_DIFFERENCE="true"
                 COST_INCREASE=$difference
               fi
-
               if [ "$future_cost" -lt "$past_cost" ] && [ "$do_check" == true ]; then
                 difference=`expr $past_cost - $future_cost`
                 echo "##vso[task.logissue type=warning]Change in cost found, it is going down by around $"$difference" per month"
-                HAS_COST_DIFFERENCE=false
+                HAS_COST_DIFFERENCE="false"
               fi
 
             env:
@@ -181,6 +180,7 @@ stages:
             displayName: "Run > Infrascost"
 
           - bash: |
+
               echo "HAS_COST_DIFFERENCE="$HAS_COST_DIFFERENCE
               echo "TERRAFORM_PLAN_HAS_CHANGES="$TERRAFORM_PLAN_HAS_CHANGES
               echo "TERRAFORM_PLAN_HAS_DESTROY_CHANGES="$TERRAFORM_PLAN_HAS_DESTROY_CHANGES
