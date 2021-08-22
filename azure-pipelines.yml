@@ -145,7 +145,7 @@ stages:
               raw_resources=$(jq -r '.projects[0].pastBreakdown.resources' $(System.DefaultWorkingDirectory)/output/cost.json)
 
               if [ "$raw_resources" == "[]" ]; then
-                  echo "has no resources"
+                  echo "##vso[task.logissue type=warning]Pipeline run has no supported Infracost resouces or it has been run for the first time"
                   do_check=false
               elif [[ "$raw_resources" != "[]" ]]; then
                 do_check=true
@@ -159,6 +159,7 @@ stages:
 
               if [ "$future_cost" -gt "$past_cost" ] && [ "$do_check" == true ]; then
                 difference=`expr $future_cost - $past_cost`
+                echo "##vso[task.logissue type=warning]Chage in cost found"
                 echo "it costs ~$"$difference" more !!!"
               fi       
             env:
