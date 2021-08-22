@@ -12,6 +12,7 @@ variables:
   tf_state_sa_name: "tfstatesa20210606" # name of of the storage account to create/use for the terraform state file
   tf_state_container_name: "tfstate" # name of of the container to create/use for the terraform state file
   tf_environment: "dev" # enviroment name, used for the statefile name
+  cost_increase_alert: "25" # how much more in $ per month should we alert on
 
 pool:
   vmImage: "ubuntu-latest"
@@ -161,7 +162,10 @@ stages:
                 difference=`expr $future_cost - $past_cost`
                 echo "##vso[task.logissue type=warning]Chage in cost found"
                 echo "it costs ~$"$difference" more !!!"
-              fi       
+                if [ "$difference" -gt "$cost_increase_alert" ] && [ "$do_check" == true ]; then
+                  echo "##vso[task.logissue type=warning]Chage in cost found"
+                fi
+              fi
             env:
               INFRACOST_API_KEY: $(INFRACOST_API_KEY)
             name: "runinfracost"
