@@ -3,6 +3,7 @@
 trigger:
   - main
 
+  
 variables:
   tf_version: "latest" # what version of terraform should be used
   tf_state_rg: "rg-tfstate" # name of the resource group to create/use for the terraform state file
