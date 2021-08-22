@@ -133,6 +133,39 @@ stages:
             displayName: "Run > terraform show"
 
           - bash: |
+              sudo apt-get update -qq && sudo apt-get -qq install bc curl git jq
+              curl -sL https://github.com/infracost/infracost/releases/latest/download/infracost-linux-amd64.tar.gz | tar xz -C /tmp
+              sudo mv /tmp/infracost-linux-amd64 /usr/bin/infracost
+
+              mkdir $(System.DefaultWorkingDirectory)/output
+              infracost breakdown --format json --path $(System.DefaultWorkingDirectory)/terraform.tfplan > $(System.DefaultWorkingDirectory)/output/cost.json
+              infracost breakdown --format html --path $(System.DefaultWorkingDirectory)/terraform.tfplan > $(System.DefaultWorkingDirectory)/output/cost.json
+
+              raw_resources=$(jq -r '.projects[0].pastBreakdown.resources' output/cost.json)
+
+              if [ "$raw_resources" == "[]" ]; then
+                  echo "has no resources"
+                  do_check=false
+              elif [[ "$raw_resources" != "[]" ]]; then
+                do_check=true
+              fi
+
+              raw_past_cost=$(jq -r '.projects[0].pastBreakdown.totalMonthlyCost' output/cost.json)
+              raw_future_cost=$(jq -r '.projects[0].diff.totalMonthlyCost' output/cost.json)
+
+              past_cost=${raw_past_cost%\.*}
+              future_cost=${raw_future_cost%\.*}
+
+              if [ "$future_cost" -gt "$past_cost" ] && [ "$do_check" == true ]; then
+                difference=`expr $future_cost - $past_cost`
+                echo "it costs ~$"$difference" more !!!"
+              fi                
+            env:
+              INFRACOST_API_KEY: $(INFRACOST_API_KEY)
+            name: "runinfracost"
+            displayName: "Infracost > Install and run Infrascost"
+
+          - bash: |
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] ; then
                 echo "##vso[task.setvariable variable=HAS_CHANGES_ONLY;isOutput=true]true"
                 echo "##vso[task.logissue type=warning]Changes with no destroys detected, it is safe for the pipeline to proceed automatically"
