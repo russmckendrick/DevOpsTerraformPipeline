@@ -160,15 +160,15 @@ stages:
 
               if [ "$future_cost" -gt "$past_cost" ] && [ "$do_check" == true ]; then
                 difference=`expr $future_cost - $past_cost`
-                echo "##vso[task.logissue type=warning]Change in cost found, is going up by around $"$difference
+                echo "##vso[task.logissue type=warning]Change in cost found, it is going up by around $"$difference" per month"
                 echo "##vso[task.setvariable variable=COST_INCREASE;isOutput=true]"$difference
                 echo "##vso[task.setvariable variable=COST_DIFFERENCE;isOutput=true]true"
               fi
               if [ "$future_cost" -lt "$past_cost" ] && [ "$do_check" == true ]; then
                 difference=`expr $past_cost - $future_cost`
-                echo "##vso[task.logissue type=warning]Change in cost found, is going down by around $"$difference
-                echo "##vso[task.setvariable variable=COST_DIFFERENCE;isOutput=true]flase"
-                fi
+                echo "##vso[task.logissue type=warning]Change in cost found, it is going down by around $"$difference" per month"
+                echo "##vso[task.setvariable variable=COST_DIFFERENCE;isOutput=true]false"
+              fi
             env:
               INFRACOST_API_KEY: $(INFRACOST_API_KEY)
             name: "runinfracost"
@@ -178,6 +178,16 @@ stages:
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$COST_DIFFERENCE" = false ] ; then
                 echo "##vso[task.setvariable variable=HAS_CHANGES_ONLY;isOutput=true]true"
                 echo "##vso[task.logissue type=warning]Changes with no destroys detected, it is safe for the pipeline to proceed automatically"
+              fi
+
+              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$COST_DIFFERENCE" = true ] && [ "$COST_INCREASE" -lt "$cost_increase_alert" ]; then
+                echo "##vso[task.setvariable variable=HAS_CHANGES_ONLY;isOutput=true]true"
+                echo "##vso[task.logissue type=warning]Changes with no destroys detected and no increases in cost greater than $"$cost_increase_alert" a month, it is safe for the pipeline to proceed automatically"
+              fi
+
+              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$COST_DIFFERENCE" = true ] && [ "$COST_INCREASE" -gt "$cost_increase_alert" ]; then
+                echo "##vso[task.setvariable variable=HAS_DESTROY_CHANGES;isOutput=true]true"
+                echo "##vso[task.logissue type=warning]Changes with no destroys detected, but there is an increase in cost greate than $"$cost_increase_alert" a month (around $"$COST_INCREASE" a month), pipeline will require a manual approval to proceed"
               fi
 
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = true ] ; then
@@ -263,7 +273,7 @@ stages:
             inputs:
               notifyUsers: |
                 azure@mckendrick.io
-              instructions: "There are resources being destroyed as part of this deployment, please review the output of Terraform plan before approving."
+              instructions: "There are resources being destroyed as part of this deployment or the costs are increasing by more than $$cost_increase_alert a month (), please review the output of Terraform plan before approving."
               onTimeout: "reject"
 
       - job: "TerraformApprove"
