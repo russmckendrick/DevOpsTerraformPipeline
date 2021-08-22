@@ -160,13 +160,15 @@ stages:
 
               if [ "$future_cost" -gt "$past_cost" ] && [ "$do_check" == true ]; then
                 difference=`expr $future_cost - $past_cost`
-                echo "##vso[task.logissue type=warning]Chage in cost found"
-                echo "it costs ~$"$difference" more !!!"
-                if [ "$difference" -gt "$cost_increase_alert" ] && [ "$do_check" == true ]; then
-                  echo "##vso[task.logissue type=warning]Chage in cost found"
-                fi
+                echo "##vso[task.logissue type=warning]Change in cost found, is going up by around $"$difference
+                echo "##vso[task.setvariable variable=COST_INCREASE;isOutput=true]"$difference
+                echo "##vso[task.setvariable variable=COST_DIFFERENCE;isOutput=true]true"
               fi
-            env:
+              if [ "$future_cost" -lt "$past_cost" ] && [ "$do_check" == true ]; then
+                difference=`expr $past_cost - $future_cost`
+                echo "##vso[task.logissue type=warning]Change in cost found, is going down by around $"$difference
+              fi
+              env:
               INFRACOST_API_KEY: $(INFRACOST_API_KEY)
             name: "runinfracost"
             displayName: "Infracost > Install and run Infrascost"
