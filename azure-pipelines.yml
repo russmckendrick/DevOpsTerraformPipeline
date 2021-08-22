@@ -175,6 +175,8 @@ stages:
             displayName: "Infracost > Install and run Infrascost"
 
           - bash: |
+              echo $COST_DIFFERENCE
+
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$COST_DIFFERENCE" = false ] ; then
                 echo "##vso[task.setvariable variable=HAS_CHANGES_ONLY;isOutput=true]true"
                 echo "##vso[task.logissue type=warning]Changes with no destroys detected, it is safe for the pipeline to proceed automatically"
