@@ -185,7 +185,7 @@ stages:
               echo "TERRAFORM_PLAN_HAS_CHANGES="$TERRAFORM_PLAN_HAS_CHANGES
               echo "TERRAFORM_PLAN_HAS_DESTROY_CHANGES="$TERRAFORM_PLAN_HAS_DESTROY_CHANGES
 
-              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$COST_DIFFERENCE" = false ] ; then
+              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$COST_DIFFERENCE" != true ] ; then
                 echo "##vso[task.setvariable variable=HAS_CHANGES_ONLY;isOutput=true]true"
                 echo "##vso[task.logissue type=warning]Changes with no destroys detected, it is safe for the pipeline to proceed automatically"
               fi
