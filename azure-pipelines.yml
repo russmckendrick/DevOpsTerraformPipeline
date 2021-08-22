@@ -165,7 +165,7 @@ stages:
               if [ "$future_cost" -gt "$past_cost" ] && [ "$do_check" == true ]; then
                 difference=`expr $future_cost - $past_cost`
                 echo "##vso[task.logissue type=warning]Change in cost found, it is going up by around $"$difference" per month"
-                HAS_COST_DIFFERENCE=true"
+                HAS_COST_DIFFERENCE=true
                 COST_INCREASE=$difference
               fi
 
