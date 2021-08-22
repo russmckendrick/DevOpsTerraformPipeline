@@ -169,12 +169,14 @@ stages:
                 echo "##vso[task.logissue type=warning]Change in cost found, it is going down by around $"$difference" per month"
                 echo "##vso[task.setvariable variable=HAS_COST_DIFFERENCE;isOutput=true]false"
               fi
+
             env:
               INFRACOST_API_KEY: $(INFRACOST_API_KEY)
             name: "runinfracost"
             displayName: "Infracost > Install and run Infrascost"
 
           - bash: |
+          
               echo "HAS_COST_DIFFERENCE="$HAS_COST_DIFFERENCE
               echo "TERRAFORM_PLAN_HAS_CHANGES="$TERRAFORM_PLAN_HAS_CHANGES
               echo "TERRAFORM_PLAN_HAS_DESTROY_CHANGES="$TERRAFORM_PLAN_HAS_DESTROY_CHANGES
@@ -202,6 +204,7 @@ stages:
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" != true ] ; then
                 echo "##vso[task.logissue type=warning]No changes detected, terraform apply will not run"
               fi
+
             name: "setvar"
             displayName: "Vars > Set Variables for next stage"
 
