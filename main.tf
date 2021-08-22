@@ -5,7 +5,7 @@ terraform {
   required_version = ">= 0.15.0"
   required_providers {
     azurerm = {
-      source  = "hashicorp/azurerm"  # https://registry.terraform.io/providers/hashicorp/azurerm/latest
+      source  = "hashicorp/azurerm" # https://registry.terraform.io/providers/hashicorp/azurerm/latest
       version = "=2.46.0"
     }
     azurecaf = {

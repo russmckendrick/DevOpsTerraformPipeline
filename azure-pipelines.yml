@@ -39,7 +39,7 @@ stages:
           - task: PublishTestResults@2
             inputs:
               testRunTitle: "Checkov Results"
-              failTaskOnFailedTests: true
+              failTaskOnFailedTests: false
               testResultsFormat: "JUnit"
               testResultsFiles: "CheckovReport.xml"
               searchFolder: "$(System.DefaultWorkingDirectory)"
@@ -140,9 +140,9 @@ stages:
 
               mkdir $(System.DefaultWorkingDirectory)/output
               infracost breakdown --format json --path $(System.DefaultWorkingDirectory)/terraform.tfplan > $(System.DefaultWorkingDirectory)/output/cost.json
-              infracost breakdown --format html --path $(System.DefaultWorkingDirectory)/terraform.tfplan > $(System.DefaultWorkingDirectory)/output/cost.json
+              infracost breakdown --format html --path $(System.DefaultWorkingDirectory)/terraform.tfplan > $(System.DefaultWorkingDirectory)/output/cost.html
 
-              raw_resources=$(jq -r '.projects[0].pastBreakdown.resources' output/cost.json)
+              raw_resources=$(jq -r '.projects[0].pastBreakdown.resources' $(System.DefaultWorkingDirectory)/output/cost.json)
 
               if [ "$raw_resources" == "[]" ]; then
                   echo "has no resources"
@@ -151,8 +151,8 @@ stages:
                 do_check=true
               fi
 
-              raw_past_cost=$(jq -r '.projects[0].pastBreakdown.totalMonthlyCost' output/cost.json)
-              raw_future_cost=$(jq -r '.projects[0].diff.totalMonthlyCost' output/cost.json)
+              raw_past_cost=$(jq -r '.projects[0].pastBreakdown.totalMonthlyCost' $(System.DefaultWorkingDirectory)/output/cost.json)
+              raw_future_cost=$(jq -r '.projects[0].diff.totalMonthlyCost' $(System.DefaultWorkingDirectory)/output/cost.json)
 
               past_cost=${raw_past_cost%\.*}
               future_cost=${raw_future_cost%\.*}
@@ -160,7 +160,7 @@ stages:
               if [ "$future_cost" -gt "$past_cost" ] && [ "$do_check" == true ]; then
                 difference=`expr $future_cost - $past_cost`
                 echo "it costs ~$"$difference" more !!!"
-              fi                
+              fi       
             env:
               INFRACOST_API_KEY: $(INFRACOST_API_KEY)
             name: "runinfracost"
