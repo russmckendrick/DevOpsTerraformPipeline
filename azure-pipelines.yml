@@ -186,8 +186,11 @@ stages:
               echo "TERRAFORM_PLAN_HAS_CHANGES="$TERRAFORM_PLAN_HAS_CHANGES
               echo "TERRAFORM_PLAN_HAS_DESTROY_CHANGES="$TERRAFORM_PLAN_HAS_DESTROY_CHANGES
 
-              cost=$(echo $COST_INCREASE | bc)
-              cost_alert=$(echo $cost_increase_alert | bc)
+              cost=${COST_INCREASE%\.*}
+              cost_alert="25"
+
+              echo $cost
+              echo $cost_alert
 
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" != true ] ; then
                 echo "##vso[task.setvariable variable=HAS_CHANGES_ONLY;isOutput=true]true"
@@ -196,7 +199,7 @@ stages:
 
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" = true ] && [ "$cost" -lt "$cost_alert" ]; then
                 echo "##vso[task.setvariable variable=HAS_CHANGES_ONLY;isOutput=true]true"
-                echo "##vso[task.logissue type=warning]Changes with no destroys detected and no increases in cost greater than $"$cost_increase_alert" a month, it is safe for the pipeline to proceed automatically"
+                echo "##vso[task.logissue type=warning]Changes with no destroys detected and no increases in cost greater than $"$cost_alert" a month, it is safe for the pipeline to proceed automatically"
               fi
 
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" = true ] && [ "$cost" -gt "$cost_alert" ]; then
