@@ -187,7 +187,7 @@ stages:
               echo "TERRAFORM_PLAN_HAS_DESTROY_CHANGES="$TERRAFORM_PLAN_HAS_DESTROY_CHANGES
 
               cost=${COST_INCREASE%\.*}
-              cost_alert="25"
+              cost_alert=$(echo $cost_increase_alert | bc -l)
 
               echo $cost
               echo $cost_alert
