@@ -135,7 +135,7 @@ stages:
 
           - bash: |
               if [ -z "$(INFRACOST_API_KEY)" ]; then
-                echo "##vso[task.logissue type=warning]ℹ️ - No Infracost API Key has been detected"
+                echo "ℹ️ - No Infracost API Key has been detected - skipping task"
               else
                 sudo apt-get update -qq && sudo apt-get -qq install bc curl git jq bc
                 curl -sL https://github.com/infracost/infracost/releases/latest/download/infracost-linux-amd64.tar.gz | tar xz -C /tmp
@@ -146,7 +146,7 @@ stages:
 
           - bash: |
               if [ -z "$(INFRACOST_API_KEY)" ]; then
-                echo "##vso[task.logissue type=warning]ℹ️ - No Infracost API Key has been detected"
+                echo "ℹ️ - No Infracost API Key has been detected - skipping task"
               else
                 mkdir $(System.DefaultWorkingDirectory)/output
                 infracost breakdown --format json --path $(System.DefaultWorkingDirectory)/terraform.tfplan > $(System.DefaultWorkingDirectory)/output/cost.json
@@ -170,7 +170,7 @@ stages:
                   echo "##vso[task.logissue type=warning]💰 - 📈 A $percent% increase in cost have be detected. Your monthly costs are increasing from \$$past_total_monthly_cost to \$$total_monthly_cost"
                   echo "##vso[task.setvariable variable=TERRAFORM_PLAN_HAS_DESTROY_CHANGES]true"
                 else
-                  echo "##vso[task.logissue type=warning]💰 - 📉 No or small increase in cost has been detected. Your new monthly costs are \$$total_monthly_cost from \$$past_total_monthly_cost"
+                  echo "##vso[task.logissue type=warning]💰 - 📉 No or a reasonale increase in cost has been detected. Your new monthly costs are \$$total_monthly_cost from \$$past_total_monthly_cost"
                 fi
               fi
             env:
@@ -265,7 +265,7 @@ stages:
             inputs:
               notifyUsers: |
                 azure@mckendrick.io
-              instructions: "There are resources being destroyed as part of this deployment or the costs are increasing by more than $$cost_increase_alert a month (), please review the output of Terraform plan before approving."
+              instructions: "There are resources being destroyed or the costs are increasing alot as part of this deployment, please review the output of Terraform plan before approving."
               onTimeout: "reject"
 
       - job: "TerraformApprove"

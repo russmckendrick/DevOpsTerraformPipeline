@@ -1,0 +1,48 @@
+# Terraform pipeline
+
+trigger: none
+
+variables:
+  tf_version: "latest" # what version of terraform should be used
+  tf_state_rg: "rg-tfstate" # name of the resource group to create/use for the terraform state file
+  tz_state_location: "uksouth" # location of the resource group to create/use for the terraform state file
+  tf_state_sku: "Standard_RAGRS" # sku to use when creating the storeage account to create/use for the terraform state file
+  tf_state_sa_name: "tfstatesa20210606" # name of of the storage account to create/use for the terraform state file
+  tf_state_container_name: "tfstate" # name of of the container to create/use for the terraform state file
+  tf_environment: "dev" # enviroment name, used for the statefile name
+  cost_increase_alert_percentage: 50 # if the difference in costs is higher than x% then you will need to manually validate the deployment
+
+pool:
+  vmImage: "ubuntu-latest"
+
+stages:
+  - stage: "TerraformDestroy"
+    displayName: "Terraform - Destroy"
+    jobs:
+      - job: "TerraformDestroy"
+        displayName: "Terraform > install, init & destroy"
+        steps:
+          - task: TerraformInstaller@0
+            inputs:
+              terraformVersion: "$(tf_version)"
+            displayName: "Install > terraform"
+
+          - task: TerraformCLI@0
+            inputs:
+              command: "init"
+              backendType: "azurerm"
+              backendServiceArm: "$(SUBSCRIPTION_NAME)"
+              ensureBackend: true
+              backendAzureRmResourceGroupName: "$(tf_state_rg)"
+              backendAzureRmResourceGroupLocation: "$(tz_state_location)"
+              backendAzureRmStorageAccountName: "$(tf_state_sa_name)"
+              backendAzureRmStorageAccountSku: "$(tf_state_sku)"
+              backendAzureRmContainerName: $(tf_state_container_name)
+              backendAzureRmKey: "$(tf_environment).terraform.tstate"
+            displayName: "Run > terraform init"
+
+          - task: TerraformCLI@0
+            inputs:
+              command: "destroy"
+              environmentServiceName: "$(SUBSCRIPTION_NAME)"
+            displayName: "Run > terraform destroy "
