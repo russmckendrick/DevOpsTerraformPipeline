@@ -209,7 +209,7 @@ stages:
                 echo "##vso[task.logissue type=warning]Changes with Destroy detected, pipeline will require a manual approval to proceed"
               fi
 
-              if [ "$TERRAFORM_PLAN_HAS_CHANGES" != true ] && [ "$HAS_COST_DIFFERENCE" != true ] ; then
+              if [ "$TERRAFORM_PLAN_HAS_CHANGES" != true ] ; then
                 echo "##vso[task.logissue type=warning]No changes detected, terraform apply will not run"
               fi
 
