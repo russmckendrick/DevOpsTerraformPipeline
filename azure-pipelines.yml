@@ -140,7 +140,7 @@ stages:
                 echo "##vso[task.logissue type=warning]ℹ️ - Infracost API Key found, costs will be estimated"
                 echo '##vso[task.setvariable variable=HAS_INFRACOST_API_KEY;isOutput=true]true'
               fi
-            name: "infracost_api_present"
+            name: "InfraCostAPIpresent"
             displayName: "Vars > Check if Infracost can be run"
 
           - bash: |
@@ -149,7 +149,7 @@ stages:
               sudo mv /tmp/infracost-linux-amd64 /usr/bin/infracost
             name: "installinfracost"
             displayName: "Install > Infrascost"
-            condition: and(succeeded(), eq(infracost_api_present.HAS_INFRACOST_API_KEY, 'true'))
+            condition: and(succeeded(), eq(InfraCostAPIpresent.HAS_INFRACOST_API_KEY, 'true'))
 
           - bash: |
               mkdir $(System.DefaultWorkingDirectory)/output
