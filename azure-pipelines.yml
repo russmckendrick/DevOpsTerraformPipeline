@@ -11,7 +11,7 @@ variables:
   tf_state_sa_name: "tfstatesa20210606" # name of of the storage account to create/use for the terraform state file
   tf_state_container_name: "tfstate" # name of of the container to create/use for the terraform state file
   tf_environment: "dev" # enviroment name, used for the statefile name
-  cost_increase_alert_percentage: 50 # percentage of when you want to get alerted
+  cost_increase_alert_percentage: 50 # if the difference in costs is higher than x% then you will need to manually validate the deployment
 
 pool:
   vmImage: "ubuntu-latest"
@@ -163,7 +163,7 @@ stages:
                 echo "##vso[task.logissue type=warning]💰 - 📈 A $percent% increase in cost have be detected. Your monthly costs are increasing from \$$past_total_monthly_cost to \$$total_monthly_cost"
                 export TERRAFORM_PLAN_HAS_DESTROY_CHANGES=true
               else
-                echo "##vso[task.logissue type=warning]💰 - 📉 No or small increase in cost has been detected. Your new monthly costs are \$$past_total_monthly_cost from \$$total_monthly_cost"
+                echo "##vso[task.logissue type=warning]💰 - 📉 No or small increase in cost has been detected. Your new monthly costs are \$$total_monthly_cost from \$$past_total_monthly_cost"
               fi
             env:
               INFRACOST_API_KEY: $(INFRACOST_API_KEY)
