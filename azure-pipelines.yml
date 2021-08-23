@@ -137,50 +137,46 @@ stages:
               if [ -z "$(INFRACOST_API_KEY)" ]; then
                 echo "##vso[task.logissue type=warning]ℹ️ - No Infracost API Key has been detected"
               else
-                echo "##vso[task.logissue type=warning]ℹ️ - Infracost API Key found, costs will be estimated"
-                echo '##vso[task.setvariable variable=HAS_INFRACOST_API_KEY;isOutput=true]true'
+                sudo apt-get update -qq && sudo apt-get -qq install bc curl git jq bc
+                curl -sL https://github.com/infracost/infracost/releases/latest/download/infracost-linux-amd64.tar.gz | tar xz -C /tmp
+                sudo mv /tmp/infracost-linux-amd64 /usr/bin/infracost
               fi
-            name: "InfraCostAPIpresent"
-            displayName: "Vars > Check if Infracost can be run"
-
-          - bash: |
-              sudo apt-get update -qq && sudo apt-get -qq install bc curl git jq bc
-              curl -sL https://github.com/infracost/infracost/releases/latest/download/infracost-linux-amd64.tar.gz | tar xz -C /tmp
-              sudo mv /tmp/infracost-linux-amd64 /usr/bin/infracost
             name: "installinfracost"
             displayName: "Install > Infrascost"
-            condition: and(succeeded(), eq(InfraCostAPIpresent.HAS_INFRACOST_API_KEY, 'true'))
 
           - bash: |
-              mkdir $(System.DefaultWorkingDirectory)/output
-              infracost breakdown --format json --path $(System.DefaultWorkingDirectory)/terraform.tfplan > $(System.DefaultWorkingDirectory)/output/cost.json
-
-              past_total_monthly_cost=$(jq '[.projects[].pastBreakdown.totalMonthlyCost | select (.!=null) | tonumber] | add' $(System.DefaultWorkingDirectory)/output/cost.json)
-              total_monthly_cost=$(jq '[.projects[].breakdown.totalMonthlyCost | select (.!=null) | tonumber] | add' $(System.DefaultWorkingDirectory)/output/cost.json)
-              diff_cost=$(jq '[.projects[].diff.totalMonthlyCost | select (.!=null) | tonumber] | add' $(System.DefaultWorkingDirectory)/output/cost.json)
-              percentage_threshold=$(cost_increase_alert_percentage)
-
-              if [ $(echo "$past_total_monthly_cost > 0" | bc -l) = 1 ] && [ $(echo "$total_monthly_cost > 0" | bc -l) = 1 ]; then
-                percent=$(echo "scale=6; $total_monthly_cost / $past_total_monthly_cost * 100 - 100" | bc)
-              fi
-
-              if [ $(echo "$past_total_monthly_cost <= 0" | bc -l) = 1 ] && [ $(echo "$total_monthly_cost <= 0" | bc -l) = 1 ]; then
-                percent=0
-              fi
-
-              if [ -z "$percent" ]; then
-                echo "##vso[task.logissue type=warning]💰 - ℹ️ No cost data has been detected"
-              elif [ $(echo "$percent > $percentage_threshold" | bc -l) = 1 ]; then
-                echo "##vso[task.logissue type=warning]💰 - 📈 A $percent% increase in cost have be detected. Your monthly costs are increasing from \$$past_total_monthly_cost to \$$total_monthly_cost"
-                echo "##vso[task.setvariable variable=TERRAFORM_PLAN_HAS_DESTROY_CHANGES]true"
+              if [ -z "$(INFRACOST_API_KEY)" ]; then
+                echo "##vso[task.logissue type=warning]ℹ️ - No Infracost API Key has been detected"
               else
-                echo "##vso[task.logissue type=warning]💰 - 📉 No or small increase in cost has been detected. Your new monthly costs are \$$total_monthly_cost from \$$past_total_monthly_cost"
+                mkdir $(System.DefaultWorkingDirectory)/output
+                infracost breakdown --format json --path $(System.DefaultWorkingDirectory)/terraform.tfplan > $(System.DefaultWorkingDirectory)/output/cost.json
+
+                past_total_monthly_cost=$(jq '[.projects[].pastBreakdown.totalMonthlyCost | select (.!=null) | tonumber] | add' $(System.DefaultWorkingDirectory)/output/cost.json)
+                total_monthly_cost=$(jq '[.projects[].breakdown.totalMonthlyCost | select (.!=null) | tonumber] | add' $(System.DefaultWorkingDirectory)/output/cost.json)
+                diff_cost=$(jq '[.projects[].diff.totalMonthlyCost | select (.!=null) | tonumber] | add' $(System.DefaultWorkingDirectory)/output/cost.json)
+                percentage_threshold=$(cost_increase_alert_percentage)
+
+                if [ $(echo "$past_total_monthly_cost > 0" | bc -l) = 1 ] && [ $(echo "$total_monthly_cost > 0" | bc -l) = 1 ]; then
+                  percent=$(echo "scale=6; $total_monthly_cost / $past_total_monthly_cost * 100 - 100" | bc)
+                fi
+
+                if [ $(echo "$past_total_monthly_cost <= 0" | bc -l) = 1 ] && [ $(echo "$total_monthly_cost <= 0" | bc -l) = 1 ]; then
+                  percent=0
+                fi
+
+                if [ -z "$percent" ]; then
+                  echo "##vso[task.logissue type=warning]💰 - ℹ️ No cost data has been detected"
+                elif [ $(echo "$percent > $percentage_threshold" | bc -l) = 1 ]; then
+                  echo "##vso[task.logissue type=warning]💰 - 📈 A $percent% increase in cost have be detected. Your monthly costs are increasing from \$$past_total_monthly_cost to \$$total_monthly_cost"
+                  echo "##vso[task.setvariable variable=TERRAFORM_PLAN_HAS_DESTROY_CHANGES]true"
+                else
+                  echo "##vso[task.logissue type=warning]💰 - 📉 No or small increase in cost has been detected. Your new monthly costs are \$$total_monthly_cost from \$$past_total_monthly_cost"
+                fi
               fi
             env:
               INFRACOST_API_KEY: $(INFRACOST_API_KEY)
             name: "runinfracost"
             displayName: "Run > Infrascost"
-            condition: and(succeeded(), eq(infracost_api_present.HAS_INFRACOST_API_KEY, 'true'))
 
           - bash: |
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] ; then
