@@ -157,11 +157,12 @@ stages:
               fi
 
               if [ -z "$percent" ]; then
-                echo "Diff is empty"
+                echo "💰 - ℹ️ No cost data has been detected"
               elif [ $(echo "$percent > $percentage_threshold" | bc -l) = 1 ]; then
-                echo "##vso[task.logissue type=warning]📈 ($percent%) is greater than the percentage threshold ($percentage_threshold%). Your monthly costs are increasing from \$$past_total_monthly_cost to \$$total_monthly_cost"
+                echo "##vso[task.logissue type=warning]💰 - 📈 A $percent% increase in cost have be detected. Your monthly costs are increasing from \$$past_total_monthly_cost to \$$total_monthly_cost"
+                export TERRAFORM_PLAN_HAS_DESTROY_CHANGES=true
               else
-                echo "##vso[task.logissue type=warning]📉 ($percent%) is less than or equal to percentage threshold ($percentage_threshold%). Your new monthly costs are \$$past_total_monthly_cost from \$$total_monthly_cost"
+                echo "##vso[task.logissue type=warning]💰 - 📉 No increase in cost has been detected. Your new monthly costs are \$$past_total_monthly_cost from \$$total_monthly_cost"
               fi
             env:
               INFRACOST_API_KEY: $(INFRACOST_API_KEY)
