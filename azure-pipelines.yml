@@ -134,7 +134,7 @@ stages:
             displayName: "Run > terraform show"
 
           - bash: |
-              sudo apt-get update -qq && sudo apt-get -qq install bc curl git jq
+              sudo apt-get update -qq && sudo apt-get -qq install bc curl git jq bc
               curl -sL https://github.com/infracost/infracost/releases/latest/download/infracost-linux-amd64.tar.gz | tar xz -C /tmp
               sudo mv /tmp/infracost-linux-amd64 /usr/bin/infracost
 
@@ -186,21 +186,22 @@ stages:
               echo "TERRAFORM_PLAN_HAS_CHANGES="$TERRAFORM_PLAN_HAS_CHANGES
               echo "TERRAFORM_PLAN_HAS_DESTROY_CHANGES="$TERRAFORM_PLAN_HAS_DESTROY_CHANGES
 
-              cost=${COST_INCREASE%\.*}
+              cost=$(echo $COST_INCREASE | bc)
+              cost_alert=$(echo $cost_increase_alert | bc)
 
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" != true ] ; then
                 echo "##vso[task.setvariable variable=HAS_CHANGES_ONLY;isOutput=true]true"
                 echo "##vso[task.logissue type=warning]Changes with no destroys detected, it is safe for the pipeline to proceed automatically"
               fi
 
-              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" = true ] && [ "$cost" -lt "$cost_increase_alert" ]; then
+              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" = true ] && [ "$cost" -lt "$cost_alert" ]; then
                 echo "##vso[task.setvariable variable=HAS_CHANGES_ONLY;isOutput=true]true"
                 echo "##vso[task.logissue type=warning]Changes with no destroys detected and no increases in cost greater than $"$cost_increase_alert" a month, it is safe for the pipeline to proceed automatically"
               fi
 
-              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" = true ] && [ "$cost" -gt "$cost_increase_alert" ]; then
+              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" = true ] && [ "$cost" -gt "$cost_alert" ]; then
                 echo "##vso[task.setvariable variable=HAS_DESTROY_CHANGES;isOutput=true]true"
-                echo "##vso[task.logissue type=warning]Changes with no destroys detected, but there is an increase in cost greate than $"$cost_increase_alert" a month (around $"$cost" a month), pipeline will require a manual approval to proceed"
+                echo "##vso[task.logissue type=warning]Changes with no destroys detected, but there is an increase in cost greate than $"$cost_alert" a month (around $"$cost" a month), pipeline will require a manual approval to proceed"
               fi
 
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = true ] ; then
@@ -208,7 +209,7 @@ stages:
                 echo "##vso[task.logissue type=warning]Changes with Destroy detected, pipeline will require a manual approval to proceed"
               fi
 
-              if [ "$TERRAFORM_PLAN_HAS_CHANGES" != true ] ; then
+              if [ "$TERRAFORM_PLAN_HAS_CHANGES" != true ] && [ "$HAS_COST_DIFFERENCE" != true ] ; then
                 echo "##vso[task.logissue type=warning]No changes detected, terraform apply will not run"
               fi
 
