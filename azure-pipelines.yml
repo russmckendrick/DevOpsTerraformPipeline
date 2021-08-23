@@ -12,7 +12,7 @@ variables:
   tf_state_sa_name: "tfstatesa20210606" # name of of the storage account to create/use for the terraform state file
   tf_state_container_name: "tfstate" # name of of the container to create/use for the terraform state file
   tf_environment: "dev" # enviroment name, used for the statefile name
-  cost_increase_alert: 25 # how much more in $ per month should we alert on
+  cost_increase_alert: 25 # how much more in $ per month should we alert on, should be an integar
 
 pool:
   vmImage: "ubuntu-latest"
@@ -150,7 +150,7 @@ stages:
               raw_resources=$(jq -r '.projects[0].pastBreakdown.resources' $(System.DefaultWorkingDirectory)/output/cost.json)
 
               if [ "$raw_resources" == "[]" ]; then
-                  echo "##vso[task.logissue type=warning]Pipeline run has no supported Infracost resouces or it has been run for the first time"
+                  echo "##vso[task.logissue type=warning]Pipeline run has no supported Infracost resouces or it is been run for the first time"
                   do_check=false
               elif [[ "$raw_resources" != "[]" ]]; then
                 do_check=true
@@ -186,19 +186,21 @@ stages:
               echo "TERRAFORM_PLAN_HAS_CHANGES="$TERRAFORM_PLAN_HAS_CHANGES
               echo "TERRAFORM_PLAN_HAS_DESTROY_CHANGES="$TERRAFORM_PLAN_HAS_DESTROY_CHANGES
 
+              cost=${COST_INCREASE%\.*}
+
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" != true ] ; then
                 echo "##vso[task.setvariable variable=HAS_CHANGES_ONLY;isOutput=true]true"
                 echo "##vso[task.logissue type=warning]Changes with no destroys detected, it is safe for the pipeline to proceed automatically"
               fi
 
-              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" = true ] && [ "$COST_INCREASE" -lt "$cost_increase_alert" ]; then
+              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" = true ] && [ "$cost" -lt "$cost_increase_alert" ]; then
                 echo "##vso[task.setvariable variable=HAS_CHANGES_ONLY;isOutput=true]true"
                 echo "##vso[task.logissue type=warning]Changes with no destroys detected and no increases in cost greater than $"$cost_increase_alert" a month, it is safe for the pipeline to proceed automatically"
               fi
 
-              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" = true ] && [ "$COST_INCREASE" -gt "$cost_increase_alert" ]; then
+              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" = true ] && [ "$cost" -gt "$cost_increase_alert" ]; then
                 echo "##vso[task.setvariable variable=HAS_DESTROY_CHANGES;isOutput=true]true"
-                echo "##vso[task.logissue type=warning]Changes with no destroys detected, but there is an increase in cost greate than $"$cost_increase_alert" a month (around $"$COST_INCREASE" a month), pipeline will require a manual approval to proceed"
+                echo "##vso[task.logissue type=warning]Changes with no destroys detected, but there is an increase in cost greate than $"$cost_increase_alert" a month (around $"$cost" a month), pipeline will require a manual approval to proceed"
               fi
 
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = true ] ; then
