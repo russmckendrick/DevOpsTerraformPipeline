@@ -243,7 +243,7 @@ resource "azurerm_network_security_group" "nsg" {
     source_port_range          = "*"
     source_address_prefix      = "*"
     destination_port_range     = "443"
-    destination_address_prefix = azurerm_network_interface.main.private_ip_address
+    destination_address_prefix = azurerm_network_interface.nic.private_ip_address
   }
 }
 
