@@ -33,7 +33,7 @@ stages:
               backendType: "azurerm"
               backendServiceArm: "$(SUBSCRIPTION_NAME)"
               ensureBackend: true
-              backendAzureRmResourceGroupName: "$(tf_state_rg)"
+              backendAzureRmResourceGroupName: "$(tf_environment)-$(tf_state_rg)"
               backendAzureRmResourceGroupLocation: "$(tz_state_location)"
               backendAzureRmStorageAccountName: "$(tf_state_sa_name)"
               backendAzureRmStorageAccountSku: "$(tf_state_sku)"
