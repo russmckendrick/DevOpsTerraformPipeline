@@ -161,7 +161,7 @@ stages:
                 echo "💰 - ℹ️ No cost data has been detected"
               elif [ $(echo "$percent > $percentage_threshold" | bc -l) = 1 ]; then
                 echo "##vso[task.logissue type=warning]💰 - 📈 A $percent% increase in cost have be detected. Your monthly costs are increasing from \$$past_total_monthly_cost to \$$total_monthly_cost"
-                export TERRAFORM_PLAN_HAS_DESTROY_CHANGES=true
+                echo "##vso[task.setvariable variable=TERRAFORM_PLAN_HAS_DESTROY_CHANGES]true"
               else
                 echo "##vso[task.logissue type=warning]💰 - 📉 No or small increase in cost has been detected. Your new monthly costs are \$$total_monthly_cost from \$$past_total_monthly_cost"
               fi
@@ -177,8 +177,8 @@ stages:
                 fi
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = true ] ; then
                 echo "##vso[task.setvariable variable=HAS_DESTROY_CHANGES;isOutput=true]true"
-                echo "##vso[task.logissue type=warning]Changes with Destroy or Cost increase greater than $cost_increase_alert_percentage% detected, pipeline will require a manual approval to proceed"
-                fi
+                echo "##vso[task.logissue type=warning]Changes with Destroy or Cost increase, pipeline will require a manual approval to proceed"
+              fi
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" != true ] ; then
                 echo "##vso[task.logissue type=warning]No changes detected, terraform apply will not run"
               fi
