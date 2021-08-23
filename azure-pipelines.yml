@@ -169,10 +169,10 @@ stages:
 
               if [ -z "$percent" ]; then
                 echo "Diff is empty"
-              elif [ $(echo "$percent > $percentage_threshold" | bc -l) = 1 ]; then
-                echo "($percent%) is greater than the percentage threshold ($percentage_threshold%). Your monthly costs are increasing from \$$past_total_monthly_cost to \$$total_monthly_cost"
+              elif [ $(echo "$percent > $cost_increase_alert_percentage" | bc -l) = 1 ]; then
+                echo "($percent%) is greater than the percentage threshold ($cost_increase_alert_percentage%). Your monthly costs are increasing from \$$past_total_monthly_cost to \$$total_monthly_cost"
               else
-                echo "($percent%) is less than or equal to percentage threshold ($percentage_threshold%). Your monthly costs are \$$past_total_monthly_cost from \$$total_monthly_cost"
+                echo "($percent%) is less than or equal to percentage threshold ($cost_increase_alert_percentage%). Your monthly costs are \$$past_total_monthly_cost from \$$total_monthly_cost"
               fi
             env:
               INFRACOST_API_KEY: $(INFRACOST_API_KEY)
