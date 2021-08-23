@@ -1,29 +1,32 @@
 # Setup
 ######################################################################################################
 
+
 terraform {
-  required_version = ">= 0.15.0"
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm" # https://registry.terraform.io/providers/hashicorp/azurerm/latest
-      version = "=2.46.0"
-    }
-    azurecaf = {
-      source  = "aztfmod/azurecaf" # https://registry.terraform.io/providers/aztfmod/azurecaf/latest
-      version = "1.2.3"
-    }
-  }
+  required_version = ">= 1.0.0"
   backend "azurerm" {
   }
+  required_providers {
+    azurerm = {
+      source = "hashicorp/azurerm" # https://registry.terraform.io/providers/hashicorp/azurerm/latest
+    }
+    azurecaf = {
+      source = "aztfmod/azurecaf" # https://registry.terraform.io/providers/aztfmod/azurecaf/latest
+    }
+
+  }
 }
 
-# Configure the Microsoft Azure Provider
-provider "azurerm" {
-  features {}
+provider "azurerm" { # Configure the Microsoft Azure RM Provider
+  features {
+    key_vault {
+      purge_soft_delete_on_destroy = true
+    }
+  }
 }
 
-# Configure the Azure CAF Provider
-provider "azurecaf" {
+
+provider "azurecaf" { # Configure the Azure CAF Provider
 }
 
 # Create the resource group
@@ -189,17 +192,10 @@ resource "azurecaf_name" "pip" {
   clean_input   = true
 }
 
-resource "azurecaf_name" "nic001" {
+resource "azurecaf_name" "nic" {
   name          = "demo"
   resource_type = "azurerm_network_interface"
-  suffixes      = ["dev", "001"]
-  clean_input   = true
-}
-
-resource "azurecaf_name" "nic002" {
-  name          = "demo"
-  resource_type = "azurerm_network_interface"
-  suffixes      = ["dev", "002"]
+  suffixes      = ["dev"]
   clean_input   = true
 }
 
@@ -217,45 +213,23 @@ resource "azurerm_virtual_network" "vnet" {
   resource_group_name = azurerm_resource_group.resource_group.name
 }
 
-resource "azurerm_subnet" "internal" {
+resource "azurerm_subnet" "subnet" {
   name                 = azurecaf_name.subnet.resource_type
   resource_group_name  = azurerm_resource_group.resource_group.name
-  virtual_network_name = azurerm_virtual_network.main.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.0.0/24"]
 }
-
-resource "azurerm_public_ip" "pip" {
-  name                = azurecaf_name.pip.result
-  resource_group_name = azurerm_resource_group.resource_group.name
-  location            = azurerm_resource_group.resource_group.location
-  allocation_method   = "Dynamic"
-}
-
-resource "azurerm_network_interface" "main" {
-  name                = azurecaf_name.nic001.result
+resource "azurerm_network_interface" "nic" {
+  name                = azurecaf_name.nic.result
   resource_group_name = azurerm_resource_group.resource_group.name
   location            = azurerm_resource_group.resource_group.location
 
   ip_configuration {
     name                          = "primary"
-    subnet_id                     = azurerm_subnet.internal.id
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.pip.id
-  }
-}
-
-resource "azurerm_network_interface" "internal" {
-  name                = azurecaf_name.nic002.result
-  resource_group_name = azurerm_resource_group.resource_group.name
-  location            = azurerm_resource_group.resource_group.location
-
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.internal.id
+    subnet_id                     = azurerm_subnet.subnet.id
     private_ip_address_allocation = "Dynamic"
   }
 }
-
 resource "azurerm_network_security_group" "nsg" {
   name                = azurecaf_name.nsg.result
   location            = azurerm_resource_group.resource_group.location
@@ -274,7 +248,7 @@ resource "azurerm_network_security_group" "nsg" {
 }
 
 resource "azurerm_network_interface_security_group_association" "main" {
-  network_interface_id      = azurerm_network_interface.internal.id
+  network_interface_id      = azurerm_network_interface.nic.id
   network_security_group_id = azurerm_network_security_group.nsg.id
 }
 
@@ -294,8 +268,7 @@ resource "azurerm_linux_virtual_machine" "main" {
   admin_password                  = random_password.vm_password.result
   disable_password_authentication = false
   network_interface_ids = [
-    azurerm_network_interface.main.id,
-    azurerm_network_interface.internal.id,
+    azurerm_network_interface.nic.id
   ]
 
   source_image_reference {
@@ -309,4 +282,6 @@ resource "azurerm_linux_virtual_machine" "main" {
     storage_account_type = "Standard_LRS"
     caching              = "ReadWrite"
   }
+
+  #checkov:skip=CKV_AZURE_1:Ensure Azure Instance does not use basic authentication - this is a test VM which is not accessible externally
 }
