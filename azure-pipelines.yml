@@ -11,7 +11,7 @@ variables:
   tf_state_sa_name: "tfstatesa20210606" # name of of the storage account to create/use for the terraform state file
   tf_state_container_name: "tfstate" # name of of the container to create/use for the terraform state file
   tf_environment: "dev" # enviroment name, used for the statefile name
-  cost_increase_alert: 25 # how much more in $ per month should we alert on, should be an integar
+  cost_increase_alert_percentage: 50 # percentage of when you want to get alerted
 
 pool:
   vmImage: "ubuntu-latest"
@@ -137,7 +137,6 @@ stages:
               sudo apt-get update -qq && sudo apt-get -qq install bc curl git jq bc
               curl -sL https://github.com/infracost/infracost/releases/latest/download/infracost-linux-amd64.tar.gz | tar xz -C /tmp
               sudo mv /tmp/infracost-linux-amd64 /usr/bin/infracost
-
             name: "installinfracost"
             displayName: "Install > Infrascost"
 
@@ -146,72 +145,49 @@ stages:
               infracost breakdown --format json --path $(System.DefaultWorkingDirectory)/terraform.tfplan > $(System.DefaultWorkingDirectory)/output/cost.json
               infracost breakdown --format html --path $(System.DefaultWorkingDirectory)/terraform.tfplan > $(System.DefaultWorkingDirectory)/output/cost.html
 
-              raw_resources=$(jq -r '.projects[0].pastBreakdown.resources' $(System.DefaultWorkingDirectory)/output/cost.json)
+              past_total_monthly_cost=$(jq '[.projects[].pastBreakdown.totalMonthlyCost | select (.!=null) | tonumber] | add' $(System.DefaultWorkingDirectory)/output/cost.json)
+              total_monthly_cost=$(jq '[.projects[].breakdown.totalMonthlyCost | select (.!=null) | tonumber] | add' $(System.DefaultWorkingDirectory)/output/cost.json)
+              diff_cost=$(jq '[.projects[].diff.totalMonthlyCost | select (.!=null) | tonumber] | add' $(System.DefaultWorkingDirectory)/output/cost.json)
 
-              if [ "$raw_resources" == "[]" ]; then
-                  echo "##vso[task.logissue type=warning]Pipeline run has no supported Infracost resouces or it is been run for the first time"
-                  do_check=false
-              elif [[ "$raw_resources" != "[]" ]]; then
-                do_check=true
+              if [ $(echo "$past_total_monthly_cost > 0" | bc -l) = 1 ] && [ $(echo "$total_monthly_cost > 0" | bc -l) = 1 ]; then
+                percent=$(echo "scale=6; $total_monthly_cost / $past_total_monthly_cost * 100 - 100" | bc)
               fi
 
-              raw_past_cost=$(jq -r '.projects[0].pastBreakdown.totalMonthlyCost' $(System.DefaultWorkingDirectory)/output/cost.json)
-              raw_future_cost=$(jq -r '.projects[0].diff.totalMonthlyCost' $(System.DefaultWorkingDirectory)/output/cost.json)
-
-              past_cost=${raw_past_cost%\.*}
-              future_cost=${raw_future_cost%\.*}
-
-              if [ "$future_cost" -gt "$past_cost" ] && [ "$do_check" == true ]; then
-                difference=`expr $future_cost - $past_cost`
-                echo "##vso[task.logissue type=warning]Change in cost found, it is going up by around $"$difference" per month"
-                echo "##vso[task.setvariable variable=HAS_COST_DIFFERENCE]true"
-                echo "##vso[task.setvariable variable=COST_INCREASE]$difference"
+              if [ $(echo "$past_total_monthly_cost <= 0" | bc -l) = 1 ] && [ $(echo "$total_monthly_cost <= 0" | bc -l) = 1 ]; then
+                percent=0
               fi
 
-              if [ "$future_cost" -lt "$past_cost" ] && [ "$do_check" == true ]; then
-                difference=`expr $past_cost - $future_cost`
-                echo "##vso[task.logissue type=warning]Change in cost found, it is going down by around $"$difference" per month"
-                echo "##vso[task.setvariable variable=HAS_COST_DIFFERENCE]false"
-                echo "##vso[task.setvariable variable=COST_INCREASE]0"
-              fi
+              absolute_percent=$(echo $percent | tr -d -)
+              diff_resources=$(jq '[.projects[].diff.resources[]] | add' $(System.DefaultWorkingDirectory)/output/cost.json)
 
+              echo "past_total_monthly_cost= "$past_total_monthly_cost
+              echo "total_monthly_cost= "$total_monthly_cost
+              echo "diff_cost= "$diff_cost
+              echo "percent= "$percent
+              echo "absolute_percent= "$absolute_percent
+              echo "diff_resources= "$diff_resources
+
+              if [ -z "$percent" ]; then
+                echo "Diff is empty"
+              elif [ $(echo "$percent > $percentage_threshold" | bc -l) = 1 ]; then
+                echo "($percent%) is greater than the percentage threshold ($percentage_threshold%). Your monthly costs are increasing from \$$past_total_monthly_cost to \$$total_monthly_cost"
+              else
+                echo "($percent%) is less than or equal to percentage threshold ($percentage_threshold%). Your monthly costs are \$$past_total_monthly_cost from \$$total_monthly_cost"
+              fi
             env:
               INFRACOST_API_KEY: $(INFRACOST_API_KEY)
             name: "runinfracost"
             displayName: "Run > Infrascost"
 
           - bash: |
-              echo "HAS_COST_DIFFERENCE="$HAS_COST_DIFFERENCE
-              echo "COST_INCREASE="$COST_INCREASE
-              echo "TERRAFORM_PLAN_HAS_CHANGES="$TERRAFORM_PLAN_HAS_CHANGES
-              echo "TERRAFORM_PLAN_HAS_DESTROY_CHANGES="$TERRAFORM_PLAN_HAS_DESTROY_CHANGES
-
-              cost=${COST_INCREASE%\.*}
-              cost_alert=$(echo $cost_increase_alert | bc -l)
-
-              echo $cost
-              echo $cost_alert
-
-              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" != true ] ; then
+              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] ; then
                 echo "##vso[task.setvariable variable=HAS_CHANGES_ONLY;isOutput=true]true"
                 echo "##vso[task.logissue type=warning]Changes with no destroys detected, it is safe for the pipeline to proceed automatically"
-              fi
-
-              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" = true ] && [ "$cost" -lt "$cost_alert" ]; then
-                echo "##vso[task.setvariable variable=HAS_CHANGES_ONLY;isOutput=true]true"
-                echo "##vso[task.logissue type=warning]Changes with no destroys detected and no increases in cost greater than $"$cost_alert" a month, it is safe for the pipeline to proceed automatically"
-              fi
-
-              if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = false ] && [ "$HAS_COST_DIFFERENCE" = true ] && [ "$cost" -gt "$cost_alert" ]; then
-                echo "##vso[task.setvariable variable=HAS_DESTROY_CHANGES;isOutput=true]true"
-                echo "##vso[task.logissue type=warning]Changes with no destroys detected, but there is an increase in cost greate than $"$cost_alert" a month (around $"$cost" a month), pipeline will require a manual approval to proceed"
-              fi
-
+                fi
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" = true ] && [ "$TERRAFORM_PLAN_HAS_DESTROY_CHANGES" = true ] ; then
                 echo "##vso[task.setvariable variable=HAS_DESTROY_CHANGES;isOutput=true]true"
                 echo "##vso[task.logissue type=warning]Changes with Destroy detected, pipeline will require a manual approval to proceed"
-              fi
-
+                fi
               if [ "$TERRAFORM_PLAN_HAS_CHANGES" != true ] ; then
                 echo "##vso[task.logissue type=warning]No changes detected, terraform apply will not run"
               fi
