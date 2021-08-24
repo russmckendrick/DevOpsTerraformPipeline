@@ -166,7 +166,7 @@ stages:
                 fi
 
                 if [ -z "$percent" ]; then
-                  echo "##vso[task.logissue type=warning]💰 - ℹ️ No cost data has been detected"
+                  echo "##vso[task.logissue type=warning]💰 - ℹ️ No previous cost data has been detected, \$$total_monthly_cost"
                 elif [ $(echo "$percent > $percentage_threshold" | bc -l) = 1 ]; then
                   echo "##vso[task.logissue type=warning]💰 - 📈 A $percent% increase in cost have be detected. Your monthly costs are increasing from \$$past_total_monthly_cost to \$$total_monthly_cost"
                   echo "##vso[task.setvariable variable=TERRAFORM_PLAN_HAS_DESTROY_CHANGES]true"
