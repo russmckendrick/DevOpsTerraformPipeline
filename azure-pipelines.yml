@@ -131,6 +131,7 @@ stages:
               command: "show"
               environmentServiceName: "$(SUBSCRIPTION_NAME)"
               inputTargetPlanOrStateFilePath: "$(System.DefaultWorkingDirectory)/terraform.tfplan"
+              commandOptions: "-out=$(System.DefaultWorkingDirectory)/terraform.tfplan -detailed-exitcode"
             displayName: "Run > terraform show"
 
           - bash: |
@@ -149,7 +150,8 @@ stages:
                 echo "ℹ️ - No Infracost API Key has been detected - skipping task"
               else
                 mkdir $(System.DefaultWorkingDirectory)/output
-                infracost breakdown --format json --path $(System.DefaultWorkingDirectory)/terraform.tfplan > $(System.DefaultWorkingDirectory)/output/cost.json
+                terraform show -json $(System.DefaultWorkingDirectory)/terraform.tfplan > $(System.DefaultWorkingDirectory)/output/plan.json
+                infracost breakdown --format json --path $(System.DefaultWorkingDirectory)/output/plan.json > $(System.DefaultWorkingDirectory)/output/cost.json
 
                 past_total_monthly_cost=$(jq '[.projects[].pastBreakdown.totalMonthlyCost | select (.!=null) | tonumber] | add' $(System.DefaultWorkingDirectory)/output/cost.json)
                 total_monthly_cost=$(jq '[.projects[].breakdown.totalMonthlyCost | select (.!=null) | tonumber] | add' $(System.DefaultWorkingDirectory)/output/cost.json)
