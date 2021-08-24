@@ -131,7 +131,6 @@ stages:
               command: "show"
               environmentServiceName: "$(SUBSCRIPTION_NAME)"
               inputTargetPlanOrStateFilePath: "$(System.DefaultWorkingDirectory)/terraform.tfplan"
-              commandOptions: "-out=$(System.DefaultWorkingDirectory)/terraform.tfplan -detailed-exitcode"
             displayName: "Run > terraform show"
 
           - bash: |
